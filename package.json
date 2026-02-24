@@ -1,0 +1,43 @@
+{
+  "name": "clawbot-mission-control",
+  "version": "1.0.0",
+  "private": true,
+  "description": "🦀 Clawbot Mission Control — AI Agent Orchestration Dashboard with swappable shells, multi-claw support, and a beautiful dark glassmorphism UI.",
+  "author": "BEKO2210",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\""
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "zustand": "^4.5.0",
+    "lucide-react": "^0.400.0",
+    "clsx": "^2.1.0",
+    "date-fns": "^3.6.0",
+    "uuid": "^9.0.0",
+    "framer-motion": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.5.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "prettier": "^3.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

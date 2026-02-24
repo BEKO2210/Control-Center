@@ -1,0 +1,251 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   Clawbot Mission Control — Global Styles
+   ============================================================================ */
+
+/* --- CSS Custom Properties (Shell Variables) --- */
+:root {
+  /* Deep Space (Default) */
+  --claw-50: #eef2ff;
+  --claw-100: #e0e7ff;
+  --claw-200: #c7d2fe;
+  --claw-300: #a5b4fc;
+  --claw-400: #818cf8;
+  --claw-500: #6366f1;
+  --claw-600: #4f46e5;
+  --claw-700: #4338ca;
+  --claw-800: #3730a3;
+  --claw-900: #312e81;
+  --claw-950: #1e1b4b;
+
+  --glass-light: rgba(255, 255, 255, 0.03);
+  --glass-medium: rgba(255, 255, 255, 0.06);
+  --glass-heavy: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --surface-primary: #0a0a1a;
+  --surface-secondary: #111127;
+  --surface-elevated: #1a1a3e;
+
+  --accent-primary: #06b6d4;
+  --accent-secondary: #8b5cf6;
+  --accent-glow: rgba(6, 182, 212, 0.4);
+
+  --shell-gradient: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0d1117 100%);
+  --shell-background: #0a0a1a;
+}
+
+/* --- Base Styles --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--shell-background);
+  color: #e2e8f0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* --- Scrollbar Styling --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-heavy);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
+
+/* --- Glass Card Base --- */
+@layer components {
+  .glass-panel {
+    @apply relative overflow-hidden rounded-xl border;
+    background: var(--glass-light);
+    border-color: var(--glass-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-panel-hover {
+    @apply glass-panel transition-all duration-300;
+  }
+
+  .glass-panel-hover:hover {
+    background: var(--glass-medium);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .glass-panel-solid {
+    @apply relative overflow-hidden rounded-xl border;
+    background: var(--glass-medium);
+    border-color: var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* --- Button Styles --- */
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200;
+    background: var(--accent-primary);
+    color: #0a0a1a;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200;
+    background: transparent;
+    color: var(--accent-primary);
+    border: 1px solid var(--glass-border);
+  }
+
+  .btn-ghost:hover {
+    background: var(--glass-light);
+    border-color: var(--accent-primary);
+  }
+
+  /* --- Input Styles --- */
+  .input-glass {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm text-white placeholder-gray-500 outline-none transition-all duration-200;
+    background: var(--glass-light);
+    border: 1px solid var(--glass-border);
+  }
+
+  .input-glass:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  /* --- Badge Styles --- */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* --- Kanban Column --- */
+  .kanban-column {
+    @apply flex flex-col gap-3 min-w-[280px] max-w-[320px];
+  }
+
+  .kanban-card {
+    @apply glass-panel-hover p-4 cursor-pointer;
+  }
+
+  /* --- Sidebar Navigation --- */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .nav-item:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: var(--glass-light);
+  }
+
+  .nav-item.active {
+    color: var(--accent-primary);
+    background: var(--glass-medium);
+    border-left: 2px solid var(--accent-primary);
+  }
+
+  /* --- Status Indicator --- */
+  .status-dot {
+    @apply w-2.5 h-2.5 rounded-full;
+  }
+
+  .status-dot.idle { @apply bg-gray-500; }
+  .status-dot.thinking { @apply bg-yellow-500 animate-pulse; }
+  .status-dot.building { @apply bg-blue-500 animate-pulse; }
+  .status-dot.reviewing { @apply bg-purple-500 animate-pulse; }
+  .status-dot.blocked { @apply bg-red-500 animate-pulse; }
+}
+
+/* --- Background Pattern --- */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(var(--glass-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* --- Glow Effect --- */
+.glow-accent {
+  box-shadow: 0 0 15px var(--accent-glow), 0 0 30px var(--accent-glow);
+}
+
+/* --- Text Gradient --- */
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* --- Animated Background Orbs --- */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  animation: float 8s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--accent-primary);
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: var(--accent-secondary);
+  bottom: -80px;
+  left: -80px;
+  animation-delay: 3s;
+}
+
+.orb-3 {
+  width: 200px;
+  height: 200px;
+  background: var(--accent-primary);
+  top: 50%;
+  left: 50%;
+  animation-delay: 5s;
+}
+
+/* --- Content Stages Colors --- */
+.stage-ideas { color: #c084fc; }
+.stage-research { color: #60a5fa; }
+.stage-outline { color: #34d399; }
+.stage-script { color: #fbbf24; }
+.stage-assets { color: #f472b6; }
+.stage-editing { color: #fb923c; }
+.stage-scheduled { color: #2dd4bf; }
+.stage-published { color: #a3e635; }
