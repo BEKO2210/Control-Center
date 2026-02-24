@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/BEKO2210/Control-Center/main/docs/assets/logo.png" alt="Clawbot Mission Control" width="120" />
+  <img src="https://raw.githubusercontent.com/BEKO2210/Control-Center/claude/clawbot-mission-control-oTW1F/docs/assets/logo.png" alt="Clawbot Mission Control" width="120" />
 </p>
 
 <h1 align="center">Clawbot Mission Control</h1>
