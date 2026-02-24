@@ -51,7 +51,7 @@ export function ShellSelector() {
               style={{
                 background: 'var(--glass-light)',
                 border: `1px solid ${isActive ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
-                ringColor: 'var(--accent-primary)',
+                ['--tw-ring-color' as string]: 'var(--accent-primary)',
               }}
             >
               {/* Shell Preview */}

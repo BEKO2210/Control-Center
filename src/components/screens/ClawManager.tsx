@@ -99,7 +99,7 @@ export function ClawManager() {
                     key={a}
                     onClick={() => setNewAvatar(a)}
                     className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all', newAvatar === a && 'ring-2')}
-                    style={{ background: 'var(--glass-light)', ringColor: 'var(--accent-primary)' }}
+                    style={{ background: 'var(--glass-light)', ['--tw-ring-color' as string]: 'var(--accent-primary)' }}
                   >
                     {a}
                   </button>

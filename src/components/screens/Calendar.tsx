@@ -150,7 +150,7 @@ export function Calendar() {
                   )}
                   style={{
                     background: dayEvents.length > 0 ? 'var(--glass-medium)' : 'var(--glass-light)',
-                    ringColor: isToday(day) ? 'var(--accent-primary)' : undefined,
+                    ['--tw-ring-color' as string]: isToday(day) ? 'var(--accent-primary)' : undefined,
                   }}
                 >
                   <div className={cn('text-[11px] font-medium mb-0.5', isToday(day) ? 'text-white' : 'text-gray-400')}>

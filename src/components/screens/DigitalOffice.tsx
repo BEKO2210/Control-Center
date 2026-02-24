@@ -74,7 +74,7 @@ export function DigitalOffice() {
                 style={{
                   background: isActive ? `${roleColor}08` : 'var(--glass-light)',
                   border: `1px solid ${isActive ? `${roleColor}30` : 'var(--glass-border)'}`,
-                  ringColor: isActive ? `${roleColor}40` : undefined,
+                  ['--tw-ring-color' as string]: isActive ? `${roleColor}40` : undefined,
                 }}
               >
                 {/* Activity Glow */}
@@ -141,7 +141,7 @@ export function DigitalOffice() {
                   <p className="text-[9px] text-gray-600 mt-1">{actInfo.desc}</p>
 
                   {/* Quick Activity Setter */}
-                  <div className="flex gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 mt-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     {(Object.keys(activityLabels) as AgentActivity[]).map((act) => (
                       <button
                         key={act}
@@ -152,7 +152,7 @@ export function DigitalOffice() {
                         )}
                         style={{
                           background: agent.activity === act ? `${activityLabels[act].color}30` : 'var(--glass-light)',
-                          ringColor: activityLabels[act].color,
+                          ['--tw-ring-color' as string]: activityLabels[act].color,
                         }}
                         title={activityLabels[act].label}
                       >

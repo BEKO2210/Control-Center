@@ -126,7 +126,7 @@ export function ContentPipeline() {
                       <h4 className="text-xs font-medium text-white">{item.title}</h4>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteContentItem(item.id); }}
-                        className="opacity-0 group-hover:opacity-100 text-[10px] text-gray-500 hover:text-red-400 transition-all"
+                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-[10px] text-gray-500 hover:text-red-400 transition-all p-1"
                       >
                         ✕
                       </button>
@@ -140,7 +140,7 @@ export function ContentPipeline() {
                     </div>
 
                     {/* Stage Move Buttons */}
-                    <div className="flex flex-wrap gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex flex-wrap gap-1 mt-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       {stages.map((s) => {
                         if (s.id === item.stage) return null;
                         return (
@@ -171,8 +171,8 @@ export function ContentPipeline() {
 
       {/* Item Detail Modal */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-          <div className="glass-panel-solid p-6 max-w-lg w-full animate-slide-in">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="glass-panel-solid p-5 md:p-6 max-w-lg w-full animate-slide-in rounded-t-2xl md:rounded-xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">{selectedItem.title}</h3>
               <button onClick={() => setSelectedItem(null)} className="text-gray-400 hover:text-white">✕</button>

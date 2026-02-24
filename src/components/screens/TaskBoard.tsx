@@ -164,7 +164,7 @@ export function TaskBoard() {
                       </span>
                       <button
                         onClick={() => deleteTask(task.id)}
-                        className="opacity-0 group-hover:opacity-100 text-xs text-gray-500 hover:text-red-400 transition-all"
+                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-xs text-gray-500 hover:text-red-400 transition-all p-1"
                       >
                         ✕
                       </button>
@@ -194,7 +194,7 @@ export function TaskBoard() {
                     )}
 
                     {/* Move Buttons */}
-                    <div className="flex gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 mt-3 flex-wrap opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       {columns.map((col) => {
                         if (col.id === task.status) return null;
                         return (
