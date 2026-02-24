@@ -32,6 +32,11 @@ interface MissionControlState {
   activeScreen: string;
   setActiveScreen: (screen: string) => void;
 
+  // Sidebar (mobile)
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
+
   // Tasks
   tasks: Task[];
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -90,7 +95,12 @@ export const useMissionControl = create<MissionControlState>()(
 
       // --- Active Screen ---
       activeScreen: 'dashboard',
-      setActiveScreen: (screen) => set({ activeScreen: screen }),
+      setActiveScreen: (screen) => set({ activeScreen: screen, sidebarOpen: false }),
+
+      // --- Sidebar (mobile) ---
+      sidebarOpen: false,
+      setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
       // --- Tasks ---
       tasks: [

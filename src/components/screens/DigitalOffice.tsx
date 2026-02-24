@@ -67,14 +67,11 @@ export function DigitalOffice() {
             return (
               <div
                 key={agent.id}
-                className={cn(
-                  'relative rounded-xl p-5 transition-all duration-500 group',
-                  isActive && 'ring-1',
-                )}
+                className="relative rounded-xl p-5 transition-all duration-500 group"
                 style={{
                   background: isActive ? `${roleColor}08` : 'var(--glass-light)',
                   border: `1px solid ${isActive ? `${roleColor}30` : 'var(--glass-border)'}`,
-                  ringColor: isActive ? `${roleColor}40` : undefined,
+                  boxShadow: isActive ? `0 0 0 1px ${roleColor}40` : undefined,
                 }}
               >
                 {/* Activity Glow */}
@@ -141,18 +138,15 @@ export function DigitalOffice() {
                   <p className="text-[9px] text-gray-600 mt-1">{actInfo.desc}</p>
 
                   {/* Quick Activity Setter */}
-                  <div className="flex gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 mt-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     {(Object.keys(activityLabels) as AgentActivity[]).map((act) => (
                       <button
                         key={act}
                         onClick={() => setAgentActivity(agent.id, act)}
-                        className={cn(
-                          'w-5 h-5 rounded-md flex items-center justify-center text-[8px] transition-all',
-                          agent.activity === act ? 'ring-1' : '',
-                        )}
+                        className="w-5 h-5 rounded-md flex items-center justify-center text-[8px] transition-all"
                         style={{
                           background: agent.activity === act ? `${activityLabels[act].color}30` : 'var(--glass-light)',
-                          ringColor: activityLabels[act].color,
+                          boxShadow: agent.activity === act ? `0 0 0 1px ${activityLabels[act].color}` : undefined,
                         }}
                         title={activityLabels[act].label}
                       >

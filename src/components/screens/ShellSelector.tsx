@@ -46,12 +46,12 @@ export function ShellSelector() {
               onClick={() => setActiveShell(shell.id)}
               className={cn(
                 'text-left rounded-xl p-5 transition-all duration-300',
-                isActive ? 'ring-2' : 'hover:ring-1',
+                !isActive && 'hover:ring-1 hover:ring-[var(--accent-primary)]',
               )}
               style={{
                 background: 'var(--glass-light)',
                 border: `1px solid ${isActive ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
-                ringColor: 'var(--accent-primary)',
+                boxShadow: isActive ? '0 0 0 2px var(--accent-primary)' : undefined,
               }}
             >
               {/* Shell Preview */}

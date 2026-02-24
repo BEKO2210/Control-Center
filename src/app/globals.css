@@ -249,3 +249,51 @@ body {
 .stage-editing { color: #fb923c; }
 .stage-scheduled { color: #2dd4bf; }
 .stage-published { color: #a3e635; }
+
+/* --- Mobile / Touch Responsive --- */
+
+/* On touch devices, make hover-dependent UI always visible */
+@media (hover: none) {
+  .kanban-card .group-hover\:opacity-100,
+  .group:hover .group-hover\:opacity-100 {
+    opacity: 1 !important;
+  }
+}
+
+/* Mobile layout adjustments */
+@media (max-width: 767px) {
+  /* Smaller kanban columns on mobile */
+  .kanban-column {
+    min-width: 260px;
+    max-width: 280px;
+  }
+
+  /* Better touch targets */
+  .nav-item {
+    padding: 0.75rem;
+    min-height: 44px;
+  }
+
+  .btn-primary,
+  .btn-ghost {
+    min-height: 44px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Reduce orb sizes on mobile to avoid overflow */
+  .orb-1 {
+    width: 200px;
+    height: 200px;
+  }
+
+  .orb-2 {
+    width: 150px;
+    height: 150px;
+  }
+
+  .orb-3 {
+    width: 100px;
+    height: 100px;
+  }
+}

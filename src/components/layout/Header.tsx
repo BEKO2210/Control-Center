@@ -8,7 +8,9 @@ export function Header() {
   const activeScreen = useMissionControl((s) => s.activeScreen);
   const notifications = useMissionControl((s) => s.notifications);
   const markNotificationRead = useMissionControl((s) => s.markNotificationRead);
+  const toggleSidebar = useMissionControl((s) => s.toggleSidebar);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const screenTitles: Record<string, string> = {
@@ -24,16 +26,32 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 border-b flex items-center justify-between px-6 relative z-20" style={{ borderColor: 'var(--glass-border)', background: 'var(--glass-light)' }}>
-      <div>
-        <h2 className="text-lg font-semibold text-white">
+    <header className="h-14 md:h-16 border-b flex items-center justify-between px-3 md:px-6 relative z-20" style={{ borderColor: 'var(--glass-border)', background: 'var(--glass-light)' }}>
+      <div className="flex items-center gap-3">
+        {/* Hamburger menu - mobile only */}
+        <button
+          onClick={toggleSidebar}
+          className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+          style={{ background: 'var(--glass-light)', border: '1px solid var(--glass-border)' }}
+        >
+          <span className="text-lg">☰</span>
+        </button>
+
+        <h2 className="text-sm md:text-lg font-semibold text-white truncate">
           {screenTitles[activeScreen] || toLabel(activeScreen)}
         </h2>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative">
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Search - hidden on mobile, toggle with icon */}
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+          style={{ background: 'var(--glass-light)', border: '1px solid var(--glass-border)' }}
+        >
+          <span className="text-sm">⌕</span>
+        </button>
+        <div className="relative hidden md:block">
           <input
             type="text"
             placeholder="Search Mission Control..."
@@ -61,7 +79,7 @@ export function Header() {
           </button>
 
           {showNotifs && (
-            <div className="absolute right-0 top-12 w-80 glass-panel-solid p-4 z-50">
+            <div className="absolute right-0 top-12 w-72 md:w-80 glass-panel-solid p-4 z-50">
               <h3 className="text-sm font-semibold text-white mb-3">Notifications</h3>
               {notifications.length === 0 ? (
                 <p className="text-xs text-gray-500 py-4 text-center">No notifications yet</p>
@@ -85,12 +103,24 @@ export function Header() {
           )}
         </div>
 
-        {/* Status Indicator */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'var(--glass-light)', border: '1px solid var(--glass-border)' }}>
+        {/* Status Indicator - compact on mobile */}
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'var(--glass-light)', border: '1px solid var(--glass-border)' }}>
           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
           <span className="text-xs text-green-400 font-medium">Online</span>
         </div>
       </div>
+
+      {/* Mobile search bar - expandable */}
+      {showSearch && (
+        <div className="absolute top-full left-0 right-0 p-3 md:hidden z-50" style={{ background: 'var(--surface-primary)', borderBottom: '1px solid var(--glass-border)' }}>
+          <input
+            type="text"
+            placeholder="Search Mission Control..."
+            className="input-glass w-full text-sm"
+            autoFocus
+          />
+        </div>
+      )}
     </header>
   );
 }
