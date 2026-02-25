@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://control-center-xi.vercel.app/">Live Demo</a> &bull;
+  <a href="https://control-center-xi.vercel.app/">Live "Demo"</a> &bull;
   <a href="#features">Features</a> &bull;
   <a href="#screenshots">Screenshots</a> &bull;
   <a href="#quick-start">Quick Start</a> &bull;
@@ -49,7 +49,7 @@
 
 **[control-center-xi.vercel.app](https://control-center-xi.vercel.app/)**
 
-Try it out — no installation required. All data is stored locally in your browser.
+Try it out — no installation required. All data is stored locally in your browser. (Just Demonstration)
 
 ---
 
