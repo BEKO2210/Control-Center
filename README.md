@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/BEKO2210/Control-Center/claude/clawbot-mission-control-oTW1F/docs/assets/logo.png" alt="Clawbot Mission Control" width="120" />
+  <img src="docs/assets/logo.png" alt="Clawbot Mission Control" width="120" />
 </p>
 
 <h1 align="center">Clawbot Mission Control</h1>
@@ -10,17 +10,18 @@
 </p>
 
 <p align="center">
+  <a href="https://control-center-xi.vercel.app/">Live Demo</a> &bull;
   <a href="#features">Features</a> &bull;
+  <a href="#screenshots">Screenshots</a> &bull;
   <a href="#quick-start">Quick Start</a> &bull;
   <a href="#architecture">Architecture</a> &bull;
-  <a href="#screens">Screens</a> &bull;
   <a href="#shell-system">Shell System</a> &bull;
   <a href="#multi-claw">Multi-Claw</a> &bull;
-  <a href="#api-reference">API</a> &bull;
   <a href="#contributing">Contributing</a>
 </p>
 
 <p align="center">
+  <a href="https://control-center-xi.vercel.app/"><img src="https://img.shields.io/badge/Live%20Demo-Vercel-black?logo=vercel" alt="Live Demo" /></a>
   <img src="https://img.shields.io/badge/Next.js-14-black?logo=next.js" alt="Next.js 14" />
   <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss" alt="Tailwind" />
@@ -41,6 +42,71 @@
 - **Dark Glassmorphism UI** — A stunning visual design with frosted glass effects, ambient lighting orbs, and neon accent glows.
 - **Six Mission Screens** — Task Board, Content Pipeline, Calendar, Memory Bank, Team Structure, and Digital Office.
 - **Fully Persistent** — All state is persisted via Zustand with localStorage, surviving page refreshes and sessions.
+
+---
+
+## Live Demo
+
+**[control-center-xi.vercel.app](https://control-center-xi.vercel.app/)**
+
+Try it out — no installation required. All data is stored locally in your browser.
+
+---
+
+## Screenshots
+
+> Screenshots captured on mobile — the UI is fully responsive across all screen sizes.
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/assets/Dashboard.jpg" alt="Dashboard — Deep Space Theme" /><br/>
+      <strong>Dashboard</strong><br/>
+      <sub>Deep Space Theme — Command center overview with stats, agents & connected claws</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/assets/Taskbord.jpg" alt="Task Board — Ember Forge Theme" /><br/>
+      <strong>Task Board</strong><br/>
+      <sub>Ember Forge Theme — Kanban board with drag-and-drop across 5 status columns</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/assets/Content-pipeline.jpg" alt="Content Pipeline — Deep Space Theme" /><br/>
+      <strong>Content Pipeline</strong><br/>
+      <sub>Deep Space Theme — 8-stage content lifecycle from Ideas to Published</sub>
+    </td>
+    <td align="center">
+      <img src="docs/assets/Calender.jpg" alt="Calendar — Cyber Neon Theme" /><br/>
+      <strong>Calendar & Scheduler</strong><br/>
+      <sub>Cyber Neon Theme — Monthly calendar with event management</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/assets/Teamstructure%20.jpg" alt="Team Structure — Ocean Depths Theme" /><br/>
+      <strong>Team Structure</strong><br/>
+      <sub>Ocean Depths Theme — Agent organization grouped by division</sub>
+    </td>
+    <td align="center">
+      <img src="docs/assets/Digitaloffice.jpg" alt="Digital Office — Ocean Depths Theme" /><br/>
+      <strong>Digital Office</strong><br/>
+      <sub>Ocean Depths Theme — Visual workspace with real-time agent activity</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/assets/ShellThemen%20.jpg" alt="Shell Themes — Deep Space Theme" /><br/>
+      <strong>Shell Themes</strong><br/>
+      <sub>Deep Space Theme — Swap the entire visual identity with one click</sub>
+    </td>
+    <td align="center">
+      <img src="docs/assets/Clawmamager.jpg" alt="Claw Manager — Ember Forge Theme" /><br/>
+      <strong>Claw Manager</strong><br/>
+      <sub>Ember Forge Theme — Connect and manage multiple bot instances</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
