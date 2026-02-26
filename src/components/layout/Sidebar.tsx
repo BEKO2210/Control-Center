@@ -16,6 +16,7 @@ const navigation = [
 const settingsNav = [
   { id: 'shells', label: 'Shell Themes', icon: '◐' },
   { id: 'claws', label: 'Claw Manager', icon: '🦀' },
+  { id: 'wizard', label: 'Connect Bot', icon: '🔗' },
 ];
 
 export function Sidebar() {

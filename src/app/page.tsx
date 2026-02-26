@@ -11,6 +11,7 @@ import { TeamStructure } from '@/components/screens/TeamStructure';
 import { DigitalOffice } from '@/components/screens/DigitalOffice';
 import { ShellSelector } from '@/components/screens/ShellSelector';
 import { ClawManager } from '@/components/screens/ClawManager';
+import { SetupWizard } from '@/components/screens/SetupWizard';
 import { useMissionControl } from '@/lib/store';
 
 const screens: Record<string, React.ComponentType> = {
@@ -23,6 +24,7 @@ const screens: Record<string, React.ComponentType> = {
   office: DigitalOffice,
   shells: ShellSelector,
   claws: ClawManager,
+  wizard: SetupWizard,
 };
 
 export default function MissionControlPage() {

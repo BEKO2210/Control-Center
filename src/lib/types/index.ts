@@ -190,6 +190,41 @@ export interface Notification {
   actionUrl?: string;
 }
 
+// --- Connection Types ---
+
+export type ConnectionType = 'websocket' | 'rest' | 'mqtt';
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+export interface ClawConnection {
+  id: string;
+  clawId: string;
+  type: ConnectionType;
+  endpoint: string;
+  port: number;
+  path: string; // e.g., "/ws" or "/api"
+  useTls: boolean;
+  authToken?: string;
+  status: ConnectionStatus;
+  lastPing?: number; // latency in ms
+  error?: string;
+  connectedAt?: string;
+  lastMessage?: string;
+  messagesReceived: number;
+  messagesSent: number;
+}
+
+export interface ClawProtocolMessage {
+  type: string;
+  data?: unknown;
+  timestamp: string;
+  id?: string;
+}
+
+// Extended Claw with connection info
+export interface ClawWithConnection extends Claw {
+  connection?: ClawConnection;
+}
+
 // --- Dashboard Stats ---
 
 export interface DashboardStats {

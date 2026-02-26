@@ -1,12 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useMissionControl } from '@/lib/store';
-import type { Claw } from '@/lib/types';
+import { connectionManager } from '@/lib/services/connectionService';
+import type { Claw, ClawConnection } from '@/lib/types';
 import { cn, timeAgo } from '@/lib/utils';
 
 const clawColors = ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#3b82f6'];
 const clawAvatars = ['🦀', '🦞', '🦐', '🦑', '🐙', '🐚', '🪸', '🦂', '🕷️', '🤖'];
+
+const statusColors: Record<string, string> = {
+  connected: '#10b981',
+  connecting: '#f59e0b',
+  disconnected: '#6b7280',
+  error: '#ef4444',
+};
 
 export function ClawManager() {
   const claws = useMissionControl((s) => s.claws);
@@ -14,12 +22,59 @@ export function ClawManager() {
   const updateClaw = useMissionControl((s) => s.updateClaw);
   const removeClaw = useMissionControl((s) => s.removeClaw);
   const agents = useMissionControl((s) => s.agents);
+  const connections = useMissionControl((s) => s.connections);
+  const updateConnection = useMissionControl((s) => s.updateConnection);
+  const removeConnection = useMissionControl((s) => s.removeConnection);
+  const setActiveScreen = useMissionControl((s) => s.setActiveScreen);
+  const addNotification = useMissionControl((s) => s.addNotification);
+
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newAvatar, setNewAvatar] = useState('🦀');
   const [newColor, setNewColor] = useState('#06b6d4');
   const [selectedClaw, setSelectedClaw] = useState<Claw | null>(null);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+
+  // Subscribe to connection events
+  useEffect(() => {
+    const unsubscribe = connectionManager.subscribe((event) => {
+      if (event.type === 'status_change') {
+        const data = event.data as { status: string; error?: string };
+        const conn = connectionManager.getConnection(event.connectionId);
+        if (conn) {
+          updateConnection(conn.id, {
+            status: conn.status,
+            error: conn.error,
+            lastPing: conn.lastPing,
+            messagesReceived: conn.messagesReceived,
+            messagesSent: conn.messagesSent,
+          });
+
+          // Update claw active status based on connection
+          if (data.status === 'connected') {
+            updateClaw(conn.clawId, {
+              isActive: true,
+              lastSeen: new Date().toISOString(),
+            });
+            addNotification({
+              title: 'Claw Connected',
+              message: `Connection to ${conn.endpoint}:${conn.port} established`,
+              type: 'success',
+            });
+          } else if (data.status === 'error' || data.status === 'disconnected') {
+            updateClaw(conn.clawId, {
+              isActive: false,
+              lastSeen: new Date().toISOString(),
+            });
+          }
+        }
+        setConnectingId(null);
+      }
+    });
+
+    return unsubscribe;
+  }, [updateConnection, updateClaw, addNotification]);
 
   const handleAdd = () => {
     if (!newName.trim()) return;
@@ -29,18 +84,83 @@ export function ClawManager() {
       avatar: newAvatar,
       color: newColor,
       agents: [],
-      isActive: true,
+      isActive: false,
     });
     setNewName('');
     setNewDesc('');
     setShowForm(false);
   };
 
-  const toggleActive = (claw: Claw) => {
+  const getConnectionForClaw = useCallback(
+    (clawId: string): ClawConnection | undefined => {
+      return connections.find((c) => c.clawId === clawId);
+    },
+    [connections],
+  );
+
+  const handleConnect = async (claw: Claw) => {
+    const conn = getConnectionForClaw(claw.id);
+    if (!conn) {
+      // No connection config, redirect to wizard
+      setActiveScreen('wizard');
+      return;
+    }
+
+    setConnectingId(claw.id);
+
+    // Register connection in manager and connect
+    const mgrConn = connectionManager.createConnection(
+      conn.clawId,
+      conn.type,
+      conn.endpoint,
+      conn.port,
+      conn.path,
+      conn.useTls,
+      conn.authToken,
+    );
+
+    // Update store with manager's connection ID
+    updateConnection(conn.id, { id: mgrConn.id });
+
+    const success = await connectionManager.connect(mgrConn.id);
+
+    if (!success) {
+      setConnectingId(null);
+      addNotification({
+        title: 'Connection Failed',
+        message: `Could not connect to ${conn.endpoint}:${conn.port}. Check your bot is running.`,
+        type: 'error',
+      });
+    }
+  };
+
+  const handleDisconnect = (claw: Claw) => {
+    const conn = getConnectionForClaw(claw.id);
+    if (conn) {
+      connectionManager.disconnect(conn.id);
+      updateConnection(conn.id, { status: 'disconnected' });
+    }
     updateClaw(claw.id, {
-      isActive: !claw.isActive,
+      isActive: false,
       lastSeen: new Date().toISOString(),
     });
+  };
+
+  const handleRemove = (claw: Claw) => {
+    const conn = getConnectionForClaw(claw.id);
+    if (conn) {
+      connectionManager.disconnect(conn.id);
+      removeConnection(conn.id);
+    }
+    removeClaw(claw.id);
+  };
+
+  const toggleConnection = (claw: Claw) => {
+    if (claw.isActive) {
+      handleDisconnect(claw);
+    } else {
+      handleConnect(claw);
+    }
   };
 
   return (
@@ -49,20 +169,22 @@ export function ClawManager() {
       <div className="mb-8">
         <h2 className="text-xl font-bold text-white mb-2">Claw Manager</h2>
         <p className="text-sm text-gray-400">
-          Manage connected Claws — independent bot instances that can join your Mission Control.
+          Manage connected Claws &mdash; independent bot instances that can join your Mission Control.
           Each Claw brings its own agents and capabilities, creating a collaborative swarm.
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="glass-panel p-4 text-center">
           <p className="text-2xl font-bold text-white">{claws.length}</p>
           <p className="text-[10px] text-gray-500">Total Claws</p>
         </div>
         <div className="glass-panel p-4 text-center">
-          <p className="text-2xl font-bold text-green-400">{claws.filter(c => c.isActive).length}</p>
-          <p className="text-[10px] text-gray-500">Active</p>
+          <p className="text-2xl font-bold text-green-400">
+            {claws.filter((c) => c.isActive).length}
+          </p>
+          <p className="text-[10px] text-gray-500">Connected</p>
         </div>
         <div className="glass-panel p-4 text-center">
           <p className="text-2xl font-bold" style={{ color: 'var(--accent-primary)' }}>
@@ -70,26 +192,50 @@ export function ClawManager() {
           </p>
           <p className="text-[10px] text-gray-500">Total Agents</p>
         </div>
+        <div className="glass-panel p-4 text-center">
+          <p className="text-2xl font-bold text-yellow-400">
+            {connections.filter((c) => c.status === 'connected').length}
+          </p>
+          <p className="text-[10px] text-gray-500">Live Connections</p>
+        </div>
       </div>
 
-      {/* Add Claw */}
-      <div className="flex justify-end mb-4">
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">
-          + Connect New Claw
+      {/* Actions */}
+      <div className="flex flex-wrap gap-2 justify-end mb-4">
+        <button
+          onClick={() => setActiveScreen('wizard')}
+          className="btn-primary"
+        >
+          + Connect via Wizard
+        </button>
+        <button onClick={() => setShowForm(!showForm)} className="btn-ghost">
+          + Quick Add
         </button>
       </div>
 
       {showForm && (
         <div className="glass-panel p-5 mb-6 animate-slide-in">
-          <h3 className="text-sm font-semibold text-white mb-4">Connect a New Claw</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">Quick Add Claw (without connection)</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Claw Name</label>
-              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g., Clawbot Alpha" className="input-glass" />
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="e.g., Clawbot Alpha"
+                className="input-glass"
+              />
             </div>
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Description</label>
-              <input type="text" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="What does this claw do?" className="input-glass" />
+              <input
+                type="text"
+                value={newDesc}
+                onChange={(e) => setNewDesc(e.target.value)}
+                placeholder="What does this claw do?"
+                className="input-glass"
+              />
             </div>
             <div>
               <label className="text-xs text-gray-400 mb-2 block">Avatar</label>
@@ -99,7 +245,13 @@ export function ClawManager() {
                     key={a}
                     onClick={() => setNewAvatar(a)}
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all"
-                    style={{ background: 'var(--glass-light)', boxShadow: newAvatar === a ? '0 0 0 2px var(--accent-primary)' : undefined }}
+                    style={{
+                      background: 'var(--glass-light)',
+                      boxShadow:
+                        newAvatar === a
+                          ? '0 0 0 2px var(--accent-primary)'
+                          : undefined,
+                    }}
                   >
                     {a}
                   </button>
@@ -113,7 +265,10 @@ export function ClawManager() {
                   <button
                     key={c}
                     onClick={() => setNewColor(c)}
-                    className={cn('w-9 h-9 rounded-lg transition-all', newColor === c && 'ring-2 ring-white')}
+                    className={cn(
+                      'w-9 h-9 rounded-lg transition-all',
+                      newColor === c && 'ring-2 ring-white',
+                    )}
                     style={{ background: c }}
                   />
                 ))}
@@ -121,8 +276,12 @@ export function ClawManager() {
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <button onClick={handleAdd} className="btn-primary">Connect Claw</button>
-            <button onClick={() => setShowForm(false)} className="btn-ghost">Cancel</button>
+            <button onClick={handleAdd} className="btn-primary">
+              Add Claw
+            </button>
+            <button onClick={() => setShowForm(false)} className="btn-ghost">
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -131,6 +290,9 @@ export function ClawManager() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {claws.map((claw) => {
           const clawAgents = agents.filter((a) => a.clawId === claw.id);
+          const conn = getConnectionForClaw(claw.id);
+          const isConnecting = connectingId === claw.id;
+
           return (
             <div
               key={claw.id}
@@ -140,11 +302,16 @@ export function ClawManager() {
               <div className="flex items-start gap-4">
                 {/* Avatar */}
                 <div
-                  className={cn('w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 transition-all', claw.isActive && 'animate-pulse-slow')}
+                  className={cn(
+                    'w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 transition-all',
+                    claw.isActive && 'animate-pulse-slow',
+                  )}
                   style={{
                     background: `${claw.color}15`,
                     border: `2px solid ${claw.color}50`,
-                    boxShadow: claw.isActive ? `0 0 20px ${claw.color}30` : 'none',
+                    boxShadow: claw.isActive
+                      ? `0 0 20px ${claw.color}30`
+                      : 'none',
                   }}
                 >
                   {claw.avatar}
@@ -153,10 +320,53 @@ export function ClawManager() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold text-white">{claw.name}</h3>
-                    <div className={cn('w-2 h-2 rounded-full', claw.isActive ? 'bg-green-400 animate-pulse' : 'bg-gray-600')} />
+                    <h3 className="text-sm font-semibold text-white">
+                      {claw.name}
+                    </h3>
+                    <div
+                      className={cn(
+                        'w-2 h-2 rounded-full',
+                        claw.isActive
+                          ? 'bg-green-400 animate-pulse'
+                          : 'bg-gray-600',
+                      )}
+                    />
                   </div>
-                  <p className="text-xs text-gray-500 mb-2">{claw.description}</p>
+                  <p className="text-xs text-gray-500 mb-1">{claw.description}</p>
+
+                  {/* Connection Info */}
+                  {conn && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full"
+                        style={{
+                          background: `${statusColors[conn.status]}15`,
+                          color: statusColors[conn.status],
+                        }}
+                      >
+                        {conn.status.toUpperCase()}
+                      </span>
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full"
+                        style={{ background: 'var(--glass-heavy)', color: 'var(--accent-primary)' }}
+                      >
+                        {conn.type.toUpperCase()}
+                      </span>
+                      {conn.lastPing !== undefined && conn.status === 'connected' && (
+                        <span className="text-[10px] text-gray-500">
+                          {conn.lastPing}ms
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {!conn && claw.id !== 'claw-primary' && (
+                    <div className="mb-2">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400">
+                        NO CONNECTION CONFIGURED
+                      </span>
+                    </div>
+                  )}
 
                   {/* Agent Avatars */}
                   <div className="flex items-center gap-2">
@@ -165,32 +375,71 @@ export function ClawManager() {
                         <div
                           key={a.id}
                           className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border"
-                          style={{ background: 'var(--glass-heavy)', borderColor: claw.color }}
+                          style={{
+                            background: 'var(--glass-heavy)',
+                            borderColor: claw.color,
+                          }}
                           title={a.name}
                         >
                           {a.avatar}
                         </div>
                       ))}
                     </div>
-                    <span className="text-[10px] text-gray-500">{clawAgents.length} agents</span>
+                    <span className="text-[10px] text-gray-500">
+                      {clawAgents.length} agents
+                    </span>
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleActive(claw); }}
-                    className="text-[10px] px-2 py-1 rounded transition-colors"
-                    style={{
-                      background: claw.isActive ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-                      color: claw.isActive ? '#ef4444' : '#10b981',
-                    }}
-                  >
-                    {claw.isActive ? 'Disconnect' : 'Connect'}
-                  </button>
+                  {conn ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleConnection(claw);
+                      }}
+                      disabled={isConnecting}
+                      className={cn(
+                        'text-[10px] px-2 py-1 rounded transition-colors',
+                        isConnecting && 'opacity-50',
+                      )}
+                      style={{
+                        background: claw.isActive
+                          ? 'rgba(239,68,68,0.1)'
+                          : 'rgba(16,185,129,0.1)',
+                        color: claw.isActive ? '#ef4444' : '#10b981',
+                      }}
+                    >
+                      {isConnecting
+                        ? 'Connecting...'
+                        : claw.isActive
+                          ? 'Disconnect'
+                          : 'Connect'}
+                    </button>
+                  ) : (
+                    claw.id !== 'claw-primary' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveScreen('wizard');
+                        }}
+                        className="text-[10px] px-2 py-1 rounded transition-colors"
+                        style={{
+                          background: 'rgba(6,182,212,0.1)',
+                          color: '#06b6d4',
+                        }}
+                      >
+                        Setup Connection
+                      </button>
+                    )
+                  )}
                   {claw.id !== 'claw-primary' && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); removeClaw(claw.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemove(claw);
+                      }}
                       className="text-[10px] px-2 py-1 rounded bg-red-500/10 text-red-400 transition-colors hover:bg-red-500/20"
                     >
                       Remove
@@ -199,10 +448,26 @@ export function ClawManager() {
                 </div>
               </div>
 
+              {/* Connection URL */}
+              {conn && (
+                <div
+                  className="mt-2 px-2 py-1 rounded text-[10px] font-mono truncate"
+                  style={{ background: 'var(--glass-light)', color: 'var(--accent-primary)' }}
+                >
+                  {conn.type === 'rest'
+                    ? `${conn.useTls ? 'https' : 'http'}://${conn.endpoint}:${conn.port}${conn.path}`
+                    : `${conn.useTls ? 'wss' : 'ws'}://${conn.endpoint}:${conn.port}${conn.path}`}
+                </div>
+              )}
+
               {/* Last Seen */}
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-[10px] text-gray-600">Joined {timeAgo(claw.joinedAt)}</span>
-                <span className="text-[10px] text-gray-600">Last seen {timeAgo(claw.lastSeen)}</span>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-[10px] text-gray-600">
+                  Joined {timeAgo(claw.joinedAt)}
+                </span>
+                <span className="text-[10px] text-gray-600">
+                  Last seen {timeAgo(claw.lastSeen)}
+                </span>
               </div>
             </div>
           );
@@ -211,50 +476,168 @@ export function ClawManager() {
 
       {/* Detail Modal */}
       {selectedClaw && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-          <div className="glass-panel-solid p-6 max-w-lg w-full animate-slide-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+        >
+          <div className="glass-panel-solid p-6 max-w-lg w-full animate-slide-in max-h-[80vh] overflow-y-auto">
             <div className="flex items-center gap-4 mb-6">
               <div
                 className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-                style={{ background: `${selectedClaw.color}15`, border: `2px solid ${selectedClaw.color}50` }}
+                style={{
+                  background: `${selectedClaw.color}15`,
+                  border: `2px solid ${selectedClaw.color}50`,
+                }}
               >
                 {selectedClaw.avatar}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">{selectedClaw.name}</h3>
-                <p className="text-xs text-gray-400">{selectedClaw.description}</p>
+                <h3 className="text-lg font-bold text-white">
+                  {selectedClaw.name}
+                </h3>
+                <p className="text-xs text-gray-400">
+                  {selectedClaw.description}
+                </p>
               </div>
-              <button onClick={() => setSelectedClaw(null)} className="ml-auto text-gray-400 hover:text-white">✕</button>
+              <button
+                onClick={() => setSelectedClaw(null)}
+                className="ml-auto text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
+
+            {/* Connection Details */}
+            {(() => {
+              const conn = getConnectionForClaw(selectedClaw.id);
+              if (conn) {
+                return (
+                  <div className="mb-4">
+                    <h4 className="text-xs font-semibold text-gray-400 mb-2">
+                      Connection Details
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="glass-panel p-3">
+                        <p className="text-xs text-gray-500">Protocol</p>
+                        <p
+                          className="text-sm font-medium"
+                          style={{ color: 'var(--accent-primary)' }}
+                        >
+                          {conn.type.toUpperCase()}
+                        </p>
+                      </div>
+                      <div className="glass-panel p-3">
+                        <p className="text-xs text-gray-500">Status</p>
+                        <p
+                          className="text-sm font-medium"
+                          style={{
+                            color: statusColors[conn.status],
+                          }}
+                        >
+                          {conn.status.charAt(0).toUpperCase() +
+                            conn.status.slice(1)}
+                        </p>
+                      </div>
+                      <div className="glass-panel p-3">
+                        <p className="text-xs text-gray-500">Latency</p>
+                        <p className="text-sm font-medium text-white">
+                          {conn.lastPing !== undefined
+                            ? `${conn.lastPing}ms`
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="glass-panel p-3">
+                        <p className="text-xs text-gray-500">Messages</p>
+                        <p className="text-sm font-medium text-white">
+                          {conn.messagesReceived} in / {conn.messagesSent} out
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className="p-2 rounded-lg text-xs font-mono truncate"
+                      style={{
+                        background: 'var(--glass-light)',
+                        color: 'var(--accent-primary)',
+                      }}
+                    >
+                      {conn.type === 'rest'
+                        ? `${conn.useTls ? 'https' : 'http'}://${conn.endpoint}:${conn.port}${conn.path}`
+                        : `${conn.useTls ? 'wss' : 'ws'}://${conn.endpoint}:${conn.port}${conn.path}`}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="glass-panel p-3">
                 <p className="text-xs text-gray-500">Status</p>
-                <p className="text-sm font-medium" style={{ color: selectedClaw.isActive ? '#10b981' : '#6b7280' }}>
+                <p
+                  className="text-sm font-medium"
+                  style={{
+                    color: selectedClaw.isActive ? '#10b981' : '#6b7280',
+                  }}
+                >
                   {selectedClaw.isActive ? 'Active' : 'Offline'}
                 </p>
               </div>
               <div className="glass-panel p-3">
                 <p className="text-xs text-gray-500">Agents</p>
-                <p className="text-sm font-medium text-white">{agents.filter(a => a.clawId === selectedClaw.id).length}</p>
+                <p className="text-sm font-medium text-white">
+                  {agents.filter((a) => a.clawId === selectedClaw.id).length}
+                </p>
               </div>
             </div>
 
             <div className="mb-4">
-              <h4 className="text-xs font-semibold text-gray-400 mb-2">Agents</h4>
+              <h4 className="text-xs font-semibold text-gray-400 mb-2">
+                Agents
+              </h4>
               <div className="space-y-2">
-                {agents.filter(a => a.clawId === selectedClaw.id).map((agent) => (
-                  <div key={agent.id} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--glass-light)' }}>
-                    <span>{agent.avatar}</span>
-                    <span className="text-xs text-white">{agent.name}</span>
-                    <span className="text-[10px] text-gray-500">— {agent.role}</span>
-                    <div className={`ml-auto status-dot ${agent.activity}`} />
-                  </div>
-                ))}
+                {agents
+                  .filter((a) => a.clawId === selectedClaw.id)
+                  .map((agent) => (
+                    <div
+                      key={agent.id}
+                      className="flex items-center gap-2 p-2 rounded-lg"
+                      style={{ background: 'var(--glass-light)' }}
+                    >
+                      <span>{agent.avatar}</span>
+                      <span className="text-xs text-white">{agent.name}</span>
+                      <span className="text-[10px] text-gray-500">
+                        &mdash; {agent.role}
+                      </span>
+                      <div
+                        className={`ml-auto status-dot ${agent.activity}`}
+                      />
+                    </div>
+                  ))}
+                {agents.filter((a) => a.clawId === selectedClaw.id).length === 0 && (
+                  <p className="text-xs text-gray-600 py-2">No agents assigned to this claw.</p>
+                )}
               </div>
             </div>
 
-            <button onClick={() => setSelectedClaw(null)} className="btn-ghost">Close</button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedClaw(null)}
+                className="btn-ghost"
+              >
+                Close
+              </button>
+              {selectedClaw.id !== 'claw-primary' && !getConnectionForClaw(selectedClaw.id) && (
+                <button
+                  onClick={() => {
+                    setSelectedClaw(null);
+                    setActiveScreen('wizard');
+                  }}
+                  className="btn-primary"
+                >
+                  Setup Connection
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
