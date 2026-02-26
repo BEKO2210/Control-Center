@@ -65,17 +65,17 @@ export function toLabel(str: string): string {
 }
 
 /**
- * Get an emoji for agent activity.
+ * Get a label for agent activity.
  */
 export function getActivityIcon(activity: string): string {
-  const icons: Record<string, string> = {
-    idle: '💤',
-    thinking: '🧠',
-    building: '🔨',
-    reviewing: '👁️',
-    blocked: '🚫',
+  const labels: Record<string, string> = {
+    idle: 'ZZZ',
+    thinking: 'THK',
+    building: 'BLD',
+    reviewing: 'REV',
+    blocked: 'BLK',
   };
-  return icons[activity] || '⚡';
+  return labels[activity] || 'ACT';
 }
 
 /**

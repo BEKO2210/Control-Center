@@ -4,16 +4,27 @@ import { useState } from 'react';
 import { useMissionControl } from '@/lib/store';
 import type { ContentItem, ContentStage } from '@/lib/types';
 import { cn, timeAgo, toLabel } from '@/lib/utils';
+import {
+  Lightbulb,
+  Search,
+  FileText,
+  File,
+  Image,
+  Scissors,
+  CalendarCheck,
+  Rocket,
+  X,
+} from 'lucide-react';
 
-const stages: { id: ContentStage; label: string; color: string; icon: string }[] = [
-  { id: 'ideas', label: 'Ideas', color: '#c084fc', icon: '💡' },
-  { id: 'research', label: 'Research', color: '#60a5fa', icon: '🔍' },
-  { id: 'outline', label: 'Outline', color: '#34d399', icon: '📝' },
-  { id: 'script', label: 'Script', color: '#fbbf24', icon: '📄' },
-  { id: 'assets', label: 'Assets', color: '#f472b6', icon: '🎨' },
-  { id: 'editing', label: 'Editing', color: '#fb923c', icon: '✂️' },
-  { id: 'scheduled', label: 'Scheduled', color: '#2dd4bf', icon: '📅' },
-  { id: 'published', label: 'Published', color: '#a3e635', icon: '🚀' },
+const stages: { id: ContentStage; label: string; color: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }[] = [
+  { id: 'ideas', label: 'Ideas', color: '#c084fc', icon: Lightbulb },
+  { id: 'research', label: 'Research', color: '#60a5fa', icon: Search },
+  { id: 'outline', label: 'Outline', color: '#34d399', icon: FileText },
+  { id: 'script', label: 'Script', color: '#fbbf24', icon: File },
+  { id: 'assets', label: 'Assets', color: '#f472b6', icon: Image },
+  { id: 'editing', label: 'Editing', color: '#fb923c', icon: Scissors },
+  { id: 'scheduled', label: 'Scheduled', color: '#2dd4bf', icon: CalendarCheck },
+  { id: 'published', label: 'Published', color: '#a3e635', icon: Rocket },
 ];
 
 export function ContentPipeline() {
@@ -48,7 +59,7 @@ export function ContentPipeline() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-xs text-gray-500">
-          {contentItems.length} items in pipeline · {contentItems.filter(c => c.stage === 'published').length} published
+          {contentItems.length} items in pipeline - {contentItems.filter(c => c.stage === 'published').length} published
         </p>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary">
           + New Content
@@ -102,12 +113,13 @@ export function ContentPipeline() {
       {/* Pipeline Stages */}
       <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 'calc(100vh - 250px)' }}>
         {stages.map((stage) => {
+          const StageIcon = stage.icon;
           const items = contentItems.filter((c) => c.stage === stage.id);
           return (
             <div key={stage.id} className="min-w-[240px] max-w-[260px] flex-shrink-0">
               {/* Stage Header */}
               <div className="flex items-center gap-2 mb-3 px-1">
-                <span>{stage.icon}</span>
+                <StageIcon className="w-4 h-4" style={{ color: stage.color }} />
                 <span className="text-xs font-semibold text-white">{stage.label}</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: `${stage.color}15`, color: stage.color }}>
                   {items.length}
@@ -126,9 +138,9 @@ export function ContentPipeline() {
                       <h4 className="text-xs font-medium text-white">{item.title}</h4>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteContentItem(item.id); }}
-                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-[10px] text-gray-500 hover:text-red-400 transition-all p-1"
+                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all p-1"
                       >
-                        ✕
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
                     {item.description && (
@@ -143,14 +155,16 @@ export function ContentPipeline() {
                     <div className="flex flex-wrap gap-1 mt-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       {stages.map((s) => {
                         if (s.id === item.stage) return null;
+                        const MoveIcon = s.icon;
                         return (
                           <button
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); moveContentItem(item.id, s.id); }}
                             className="text-[9px] px-1.5 py-0.5 rounded transition-colors"
                             style={{ background: `${s.color}10`, color: s.color }}
+                            title={s.label}
                           >
-                            {s.icon}
+                            <MoveIcon className="w-3 h-3" />
                           </button>
                         );
                       })}
@@ -175,7 +189,9 @@ export function ContentPipeline() {
           <div className="glass-panel-solid p-5 md:p-6 max-w-lg w-full animate-slide-in rounded-t-2xl md:rounded-xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">{selectedItem.title}</h3>
-              <button onClick={() => setSelectedItem(null)} className="text-gray-400 hover:text-white">✕</button>
+              <button onClick={() => setSelectedItem(null)} className="text-gray-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
             </div>
             <p className="text-sm text-gray-400 mb-4">{selectedItem.description}</p>
             <div className="flex items-center gap-4 text-xs text-gray-500">
@@ -188,7 +204,7 @@ export function ContentPipeline() {
                 <div className="space-y-1">
                   {selectedItem.versions.map((v) => (
                     <div key={v.id} className="text-[10px] text-gray-500">
-                      v{v.id.slice(-4)} by {v.author} — {timeAgo(v.createdAt)}
+                      v{v.id.slice(-4)} by {v.author} -- {timeAgo(v.createdAt)}
                     </div>
                   ))}
                 </div>
