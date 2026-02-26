@@ -7,3 +7,4 @@ export { TeamStructure } from './TeamStructure';
 export { DigitalOffice } from './DigitalOffice';
 export { ShellSelector } from './ShellSelector';
 export { ClawManager } from './ClawManager';
+export { SetupWizard } from './SetupWizard';

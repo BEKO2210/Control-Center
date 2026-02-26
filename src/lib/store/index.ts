@@ -16,6 +16,7 @@ import type {
   ContentStage,
   AgentActivity,
   DashboardStats,
+  ClawConnection,
 } from '@/lib/types';
 import { defaultShellId } from '@/shells/registry';
 import { generateId } from '@/lib/utils';
@@ -81,6 +82,17 @@ interface MissionControlState {
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   markNotificationRead: (id: string) => void;
   clearNotifications: () => void;
+
+  // Connections
+  connections: ClawConnection[];
+  addConnection: (connection: ClawConnection) => void;
+  updateConnection: (id: string, updates: Partial<ClawConnection>) => void;
+  removeConnection: (id: string) => void;
+  getConnectionForClaw: (clawId: string) => ClawConnection | undefined;
+
+  // Wizard state
+  wizardCompleted: boolean;
+  setWizardCompleted: (completed: boolean) => void;
 
   // Dashboard
   getStats: () => DashboardStats;
@@ -329,6 +341,34 @@ export const useMissionControl = create<MissionControlState>()(
 
       clearNotifications: () => set({ notifications: [] }),
 
+      // --- Connections ---
+      connections: [],
+
+      addConnection: (connection) =>
+        set((state) => ({
+          connections: [...state.connections, connection],
+        })),
+
+      updateConnection: (id, updates) =>
+        set((state) => ({
+          connections: state.connections.map((c) =>
+            c.id === id ? { ...c, ...updates } : c,
+          ),
+        })),
+
+      removeConnection: (id) =>
+        set((state) => ({
+          connections: state.connections.filter((c) => c.id !== id),
+        })),
+
+      getConnectionForClaw: (clawId) => {
+        return get().connections.find((c) => c.clawId === clawId);
+      },
+
+      // --- Wizard ---
+      wizardCompleted: false,
+      setWizardCompleted: (completed) => set({ wizardCompleted: completed }),
+
       // --- Dashboard Stats ---
       getStats: () => {
         const state = get();
@@ -353,6 +393,8 @@ export const useMissionControl = create<MissionControlState>()(
         memories: state.memories,
         agents: state.agents,
         claws: state.claws,
+        connections: state.connections,
+        wizardCompleted: state.wizardCompleted,
       }),
     },
   ),
