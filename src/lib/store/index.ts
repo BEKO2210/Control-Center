@@ -20,7 +20,7 @@ import type {
 } from '@/lib/types';
 import { defaultShellId } from '@/shells/registry';
 import { generateId } from '@/lib/utils';
-import { defaultAgents, defaultClaw } from '@/agents/defaults';
+import { defaultAgents } from '@/agents/defaults';
 
 // --- Mission Control Store ---
 
@@ -94,6 +94,9 @@ interface MissionControlState {
   wizardCompleted: boolean;
   setWizardCompleted: (completed: boolean) => void;
 
+  // Reset
+  resetToEmpty: () => void;
+
   // Dashboard
   getStats: () => DashboardStats;
 }
@@ -115,44 +118,7 @@ export const useMissionControl = create<MissionControlState>()(
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
       // --- Tasks ---
-      tasks: [
-        {
-          id: 'task-welcome',
-          title: 'Welcome to Mission Control',
-          description: 'Explore all screens and customize your shell theme. Drag tasks between columns!',
-          status: 'in_progress' as TaskStatus,
-          assignedTo: 'user',
-          priority: 'medium' as const,
-          relatedFiles: [],
-          tags: ['onboarding'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'task-shell',
-          title: 'Try different shells',
-          description: 'Go to Settings and swap between Deep Space, Cyber Neon, Ocean Depths, and Ember Forge.',
-          status: 'queued' as TaskStatus,
-          assignedTo: 'user',
-          priority: 'low' as const,
-          relatedFiles: [],
-          tags: ['customization'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'task-agent',
-          title: 'Review AI agent team',
-          description: 'Check the Team Structure screen to see your AI agent organization.',
-          status: 'idea' as TaskStatus,
-          assignedTo: 'ai',
-          priority: 'medium' as const,
-          relatedFiles: [],
-          tags: ['agents'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ],
+      tasks: [],
 
       addTask: (task) => {
         const now = new Date().toISOString();
@@ -238,18 +204,7 @@ export const useMissionControl = create<MissionControlState>()(
         set((state) => ({ events: state.events.filter((e) => e.id !== id) })),
 
       // --- Memory ---
-      memories: [
-        {
-          id: 'mem-init',
-          title: 'Mission Control Initialized',
-          content: 'Clawbot Mission Control has been initialized. All systems are operational.',
-          category: 'context' as const,
-          source: 'system',
-          tags: ['system', 'init'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ],
+      memories: [],
 
       addMemory: (memory) => {
         const now = new Date().toISOString();
@@ -296,7 +251,7 @@ export const useMissionControl = create<MissionControlState>()(
         set((state) => ({ agents: state.agents.filter((a) => a.id !== id) })),
 
       // --- Claws ---
-      claws: [defaultClaw],
+      claws: [],
 
       addClaw: (claw) => {
         const now = new Date().toISOString();
@@ -368,6 +323,21 @@ export const useMissionControl = create<MissionControlState>()(
       // --- Wizard ---
       wizardCompleted: false,
       setWizardCompleted: (completed) => set({ wizardCompleted: completed }),
+
+      // --- Reset ---
+      resetToEmpty: () =>
+        set({
+          tasks: [],
+          contentItems: [],
+          events: [],
+          memories: [],
+          agents: [],
+          claws: [],
+          connections: [],
+          notifications: [],
+          wizardCompleted: false,
+          activeScreen: 'wizard',
+        }),
 
       // --- Dashboard Stats ---
       getStats: () => {

@@ -3,6 +3,7 @@
 import { useMissionControl } from '@/lib/store';
 import type { AgentActivity, AgentRole } from '@/lib/types';
 import { cn, toLabel } from '@/lib/utils';
+import { Building2, Bot, Users } from 'lucide-react';
 
 const roleColors: Record<AgentRole, string> = {
   developer: '#60a5fa',
@@ -25,9 +26,40 @@ export function DigitalOffice() {
   const agents = useMissionControl((s) => s.agents);
   const setAgentActivity = useMissionControl((s) => s.setAgentActivity);
   const claws = useMissionControl((s) => s.claws);
+  const setActiveScreen = useMissionControl((s) => s.setActiveScreen);
 
   const activeCount = agents.filter((a) => a.activity !== 'idle').length;
   const idleCount = agents.filter((a) => a.activity === 'idle').length;
+
+  // Empty state
+  if (agents.length === 0) {
+    return (
+      <div className="animate-fade-in">
+        <div className="glass-panel p-12 text-center">
+          <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+          <h3 className="text-lg font-semibold text-white mb-2">Office is Empty</h3>
+          <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+            No agents have been deployed yet. Connect a Claw and create agents to see them working here.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => setActiveScreen('team')}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Users className="w-4 h-4" />
+              Create Agents
+            </button>
+            <button
+              onClick={() => setActiveScreen('wizard')}
+              className="btn-ghost"
+            >
+              Connect Claw
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
@@ -91,7 +123,7 @@ export function DigitalOffice() {
                     <div className="relative">
                       <div
                         className={cn(
-                          'w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all',
+                          'w-12 h-12 rounded-xl flex items-center justify-center transition-all',
                           isActive && 'animate-pulse-slow',
                         )}
                         style={{
@@ -100,7 +132,7 @@ export function DigitalOffice() {
                           boxShadow: isActive ? `0 0 15px ${roleColor}30` : 'none',
                         }}
                       >
-                        {agent.avatar}
+                        <Bot className="w-5 h-5" style={{ color: roleColor }} />
                       </div>
                       {/* Status Indicator */}
                       <div
@@ -116,7 +148,9 @@ export function DigitalOffice() {
                     {(() => {
                       const claw = claws.find((c) => c.id === agent.clawId);
                       return claw ? (
-                        <span className="text-sm" title={claw.name}>{claw.avatar}</span>
+                        <span title={claw.name}>
+                          <Bot className="w-4 h-4" style={{ color: claw.color }} />
+                        </span>
                       ) : null;
                     })()}
                   </div>

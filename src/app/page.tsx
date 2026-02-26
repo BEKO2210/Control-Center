@@ -29,7 +29,12 @@ const screens: Record<string, React.ComponentType> = {
 
 export default function MissionControlPage() {
   const activeScreen = useMissionControl((s) => s.activeScreen);
-  const ActiveScreen = screens[activeScreen] || Dashboard;
+  const wizardCompleted = useMissionControl((s) => s.wizardCompleted);
+  const claws = useMissionControl((s) => s.claws);
+
+  // Gate: if no claws connected and wizard not completed, force wizard
+  const needsSetup = !wizardCompleted && claws.length === 0;
+  const ActiveScreen = needsSetup ? SetupWizard : (screens[activeScreen] || Dashboard);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden" style={{ background: 'var(--shell-gradient)' }}>
@@ -40,12 +45,12 @@ export default function MissionControlPage() {
         <div className="orb orb-3" />
       </div>
 
-      {/* Sidebar */}
-      <Sidebar />
+      {/* Sidebar — hidden during initial setup */}
+      {!needsSetup && <Sidebar />}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 min-w-0">
-        <Header />
+        {!needsSetup && <Header />}
         <main className="flex-1 overflow-y-auto p-3 md:p-6">
           <ActiveScreen />
         </main>

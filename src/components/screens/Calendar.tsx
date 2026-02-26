@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useMissionControl } from '@/lib/store';
 import type { CalendarEvent, EventType, EventStatus } from '@/lib/types';
 import { cn, toLabel, formatDate } from '@/lib/utils';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const eventTypeColors: Record<EventType, string> = {
   task: '#60a5fa',
@@ -74,7 +75,7 @@ export function Calendar() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-xs text-gray-500">
-          {events.length} events · {events.filter(e => e.status === 'scheduled').length} upcoming
+          {events.length} events - {events.filter(e => e.status === 'scheduled').length} upcoming
         </p>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary">
           + New Event
@@ -121,9 +122,9 @@ export function Calendar() {
         <div className="lg:col-span-3 glass-panel p-5">
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-6">
-            <button onClick={prevMonth} className="btn-ghost text-xs">← Prev</button>
+            <button onClick={prevMonth} className="btn-ghost text-xs flex items-center gap-1"><ChevronLeft className="w-3 h-3" /> Prev</button>
             <h3 className="text-lg font-semibold text-white">{months[month]} {year}</h3>
-            <button onClick={nextMonth} className="btn-ghost text-xs">Next →</button>
+            <button onClick={nextMonth} className="btn-ghost text-xs flex items-center gap-1">Next <ChevronRight className="w-3 h-3" /></button>
           </div>
 
           {/* Day Headers */}
@@ -198,9 +199,9 @@ export function Calendar() {
                     </div>
                     <button
                       onClick={() => deleteEvent(event.id)}
-                      className="opacity-0 group-hover:opacity-100 text-[10px] text-gray-500 hover:text-red-400 transition-all"
+                      className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all"
                     >
-                      ✕
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 </div>

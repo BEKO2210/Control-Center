@@ -4,14 +4,24 @@ import { useState, useMemo } from 'react';
 import { useMissionControl } from '@/lib/store';
 import type { Memory, MemoryCategory } from '@/lib/types';
 import { cn, timeAgo, toLabel } from '@/lib/utils';
+import {
+  Settings,
+  ClipboardList,
+  Brain,
+  FolderOpen,
+  Scale,
+  MessageSquare,
+  Search,
+  Database,
+} from 'lucide-react';
 
-const categories: { id: MemoryCategory; label: string; color: string; icon: string }[] = [
-  { id: 'preference', label: 'Preferences', color: '#f472b6', icon: '⚙️' },
-  { id: 'context', label: 'Context', color: '#60a5fa', icon: '📋' },
-  { id: 'learned', label: 'Learned', color: '#34d399', icon: '🧠' },
-  { id: 'project', label: 'Project', color: '#fbbf24', icon: '📁' },
-  { id: 'decision', label: 'Decisions', color: '#a78bfa', icon: '⚖️' },
-  { id: 'conversation', label: 'Conversations', color: '#fb923c', icon: '💬' },
+const categories: { id: MemoryCategory; label: string; color: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'preference', label: 'Preferences', color: '#f472b6', icon: Settings },
+  { id: 'context', label: 'Context', color: '#60a5fa', icon: ClipboardList },
+  { id: 'learned', label: 'Learned', color: '#34d399', icon: Brain },
+  { id: 'project', label: 'Project', color: '#fbbf24', icon: FolderOpen },
+  { id: 'decision', label: 'Decisions', color: '#a78bfa', icon: Scale },
+  { id: 'conversation', label: 'Conversations', color: '#fb923c', icon: MessageSquare },
 ];
 
 export function MemoryScreen() {
@@ -109,7 +119,7 @@ export function MemoryScreen() {
             placeholder="Search memories..."
             className="input-glass pl-8"
           />
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs">⌕</span>
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 w-3.5 h-3.5" />
         </div>
         <div className="flex gap-2 flex-wrap">
           <button
@@ -119,20 +129,24 @@ export function MemoryScreen() {
           >
             All
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setFilterCategory(cat.id)}
-              className={cn('text-xs px-3 py-2 rounded-lg transition-colors')}
-              style={{
-                background: filterCategory === cat.id ? `${cat.color}15` : 'var(--glass-light)',
-                color: filterCategory === cat.id ? cat.color : '#6b7280',
-                border: `1px solid ${filterCategory === cat.id ? `${cat.color}40` : 'var(--glass-border)'}`,
-              }}
-            >
-              {cat.icon} {cat.label}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const CatIcon = cat.icon;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setFilterCategory(cat.id)}
+                className={cn('text-xs px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5')}
+                style={{
+                  background: filterCategory === cat.id ? `${cat.color}15` : 'var(--glass-light)',
+                  color: filterCategory === cat.id ? cat.color : '#6b7280',
+                  border: `1px solid ${filterCategory === cat.id ? `${cat.color}40` : 'var(--glass-border)'}`,
+                }}
+              >
+                <CatIcon className="w-3 h-3" />
+                {cat.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -181,12 +195,14 @@ export function MemoryScreen() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredMemories.map((memory) => {
           const cat = categories.find((c) => c.id === memory.category);
+          const CatIcon = cat?.icon;
           return (
             <div key={memory.id} className="glass-panel-hover p-4 group">
               {/* Header */}
               <div className="flex items-start justify-between mb-2">
-                <span className="text-xs px-2 py-0.5 rounded" style={{ background: `${cat?.color}15`, color: cat?.color }}>
-                  {cat?.icon} {cat?.label}
+                <span className="text-xs px-2 py-0.5 rounded flex items-center gap-1" style={{ background: `${cat?.color}15`, color: cat?.color }}>
+                  {CatIcon && <CatIcon className="w-3 h-3" />}
+                  {cat?.label}
                 </span>
                 <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 flex gap-1 transition-all">
                   <button onClick={() => handleEdit(memory)} className="text-[10px] text-gray-500 hover:text-blue-400 p-1">Edit</button>
@@ -220,8 +236,13 @@ export function MemoryScreen() {
 
       {filteredMemories.length === 0 && (
         <div className="glass-panel p-12 text-center">
+          <Database className="w-10 h-10 mx-auto mb-3 text-gray-600" />
           <p className="text-sm text-gray-500">No memories found</p>
-          <p className="text-xs text-gray-600 mt-1">Try adjusting your search or filters</p>
+          <p className="text-xs text-gray-600 mt-1">
+            {memories.length === 0
+              ? 'Memories will be stored as you use Mission Control.'
+              : 'Try adjusting your search or filters'}
+          </p>
         </div>
       )}
     </div>

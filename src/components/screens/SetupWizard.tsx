@@ -5,6 +5,24 @@ import { useMissionControl } from '@/lib/store';
 import { connectionManager } from '@/lib/services/connectionService';
 import type { ConnectionType, ClawConnection } from '@/lib/types';
 import { cn, generateId } from '@/lib/utils';
+import {
+  Monitor,
+  Globe,
+  Plug,
+  Radio,
+  Cloud,
+  Settings,
+  Link as LinkIcon,
+  Key,
+  Wifi,
+  CheckCircle2,
+  XCircle,
+  Bot,
+  Users,
+  KanbanSquare,
+  Activity,
+  Shell,
+} from 'lucide-react';
 
 // --- Wizard Steps ---
 type WizardStep =
@@ -37,7 +55,7 @@ const STEP_LABELS: Record<WizardStep, string> = {
 interface PresetConfig {
   name: string;
   description: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   type: ConnectionType;
   port: number;
   path: string;
@@ -48,7 +66,7 @@ const PRESETS: PresetConfig[] = [
   {
     name: 'Local Dev Server',
     description: 'Connect to a Claw Bot running on localhost',
-    icon: '💻',
+    icon: Monitor,
     type: 'websocket',
     port: 8080,
     path: '/ws',
@@ -57,7 +75,7 @@ const PRESETS: PresetConfig[] = [
   {
     name: 'Production API',
     description: 'Connect to a production Claw Bot via HTTPS REST API',
-    icon: '🌐',
+    icon: Globe,
     type: 'rest',
     port: 443,
     path: '/api',
@@ -66,7 +84,7 @@ const PRESETS: PresetConfig[] = [
   {
     name: 'ESP32 / Hardware Bot',
     description: 'Connect to an ESP32 or Raspberry Pi running a WebSocket server',
-    icon: '🔌',
+    icon: Plug,
     type: 'websocket',
     port: 81,
     path: '/',
@@ -75,7 +93,7 @@ const PRESETS: PresetConfig[] = [
   {
     name: 'MQTT Broker',
     description: 'Connect via MQTT-over-WebSocket for IoT devices',
-    icon: '📡',
+    icon: Radio,
     type: 'mqtt',
     port: 9001,
     path: '/mqtt',
@@ -84,7 +102,7 @@ const PRESETS: PresetConfig[] = [
   {
     name: 'Cloud Agent (OpenClaw)',
     description: 'Connect to an OpenClaw-compatible cloud agent gateway',
-    icon: '☁️',
+    icon: Cloud,
     type: 'rest',
     port: 443,
     path: '/v1',
@@ -93,7 +111,7 @@ const PRESETS: PresetConfig[] = [
   {
     name: 'Custom Setup',
     description: 'Configure every detail manually',
-    icon: '⚙️',
+    icon: Settings,
     type: 'websocket',
     port: 8080,
     path: '/ws',
@@ -101,7 +119,6 @@ const PRESETS: PresetConfig[] = [
   },
 ];
 
-const clawAvatars = ['🦀', '🦞', '🦐', '🦑', '🐙', '🐚', '🪸', '🦂', '🕷️', '🤖'];
 const clawColors = ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#f97316'];
 
 export function SetupWizard() {
@@ -136,7 +153,6 @@ export function SetupWizard() {
   // Bot config
   const [botName, setBotName] = useState('');
   const [botDesc, setBotDesc] = useState('');
-  const [botAvatar, setBotAvatar] = useState('🦀');
   const [botColor, setBotColor] = useState('#06b6d4');
 
   // Logs
@@ -241,7 +257,6 @@ export function SetupWizard() {
   const completeSetup = () => {
     const clawId = generateId('claw');
 
-    // Create the connection object
     const connection: ClawConnection = {
       id: generateId('conn'),
       clawId,
@@ -256,20 +271,17 @@ export function SetupWizard() {
       messagesSent: 0,
     };
 
-    // Add the claw
     addClaw({
       name: botName || 'Unnamed Claw',
       description: botDesc || `Connected via ${connType.toUpperCase()}`,
-      avatar: botAvatar,
+      avatar: 'bot',
       color: botColor,
       agents: [],
       isActive: false,
     });
 
-    // Store connection config
     addConnection(connection);
 
-    // Add setup memory
     addMemory({
       title: `Claw Bot Connected: ${botName}`,
       content: `New Claw Bot "${botName}" configured with ${connType.toUpperCase()} connection to ${endpoint}:${port}${path}. ${useTls ? 'TLS enabled.' : 'No TLS.'} ${authToken ? 'Authenticated.' : 'No auth.'}`,
@@ -278,7 +290,6 @@ export function SetupWizard() {
       tags: ['connection', 'setup', connType],
     });
 
-    // Notify
     addNotification({
       title: 'Claw Bot Connected',
       message: `${botName} has been configured and is ready to connect.`,
@@ -286,8 +297,6 @@ export function SetupWizard() {
     });
 
     setWizardCompleted(true);
-
-    // Navigate to Claw Manager
     setActiveScreen('claws');
   };
 
@@ -295,7 +304,9 @@ export function SetupWizard() {
 
   const renderWelcome = () => (
     <div className="text-center max-w-2xl mx-auto">
-      <div className="text-6xl mb-6 animate-float">🦀</div>
+      <div className="mb-6">
+        <Shell className="w-16 h-16 mx-auto animate-float" style={{ color: 'var(--accent-primary)' }} />
+      </div>
       <h2 className="text-2xl font-bold text-white mb-4">
         Connect Your Claw Bot
       </h2>
@@ -309,16 +320,19 @@ export function SetupWizard() {
         <h3 className="text-sm font-semibold text-white mb-4">What you&apos;ll need:</h3>
         <div className="space-y-3">
           {[
-            { icon: '🔗', text: 'The endpoint URL or IP address of your Claw Bot' },
-            { icon: '🔑', text: 'Authentication token (if your bot requires it)' },
-            { icon: '📡', text: 'The protocol your bot uses (WebSocket, REST API, or MQTT)' },
-            { icon: '🌐', text: 'Network access to the bot (same network or public endpoint)' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <span className="text-lg">{item.icon}</span>
-              <span className="text-sm text-gray-300">{item.text}</span>
-            </div>
-          ))}
+            { icon: LinkIcon, text: 'The endpoint URL or IP address of your Claw Bot' },
+            { icon: Key, text: 'Authentication token (if your bot requires it)' },
+            { icon: Radio, text: 'The protocol your bot uses (WebSocket, REST API, or MQTT)' },
+            { icon: Wifi, text: 'Network access to the bot (same network or public endpoint)' },
+          ].map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <Icon className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--accent-primary)' }} />
+                <span className="text-sm text-gray-300">{item.text}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -350,48 +364,51 @@ export function SetupWizard() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {PRESETS.map((preset) => (
-          <button
-            key={preset.name}
-            onClick={() => applyPreset(preset)}
-            className={cn(
-              'glass-panel p-5 text-left transition-all duration-300 group',
-              selectedPreset?.name === preset.name
-                ? 'ring-2'
-                : 'hover:border-white/20',
-            )}
-            style={{
-              borderColor: selectedPreset?.name === preset.name ? 'var(--accent-primary)' : undefined,
-              boxShadow: selectedPreset?.name === preset.name ? '0 0 20px var(--accent-glow)' : undefined,
-            }}
-          >
-            <div className="flex items-start gap-4">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform group-hover:scale-110"
-                style={{ background: 'var(--glass-heavy)' }}
-              >
-                {preset.icon}
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-white mb-1">{preset.name}</h3>
-                <p className="text-xs text-gray-500 mb-2">{preset.description}</p>
-                <div className="flex gap-2">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'var(--glass-heavy)', color: 'var(--accent-primary)' }}>
-                    {preset.type.toUpperCase()}
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'var(--glass-heavy)', color: 'var(--accent-secondary)' }}>
-                    Port {preset.port}
-                  </span>
-                  {preset.useTls && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">
-                      TLS
+        {PRESETS.map((preset) => {
+          const Icon = preset.icon;
+          return (
+            <button
+              key={preset.name}
+              onClick={() => applyPreset(preset)}
+              className={cn(
+                'glass-panel p-5 text-left transition-all duration-300 group',
+                selectedPreset?.name === preset.name
+                  ? 'ring-2'
+                  : 'hover:border-white/20',
+              )}
+              style={{
+                borderColor: selectedPreset?.name === preset.name ? 'var(--accent-primary)' : undefined,
+                boxShadow: selectedPreset?.name === preset.name ? '0 0 20px var(--accent-glow)' : undefined,
+              }}
+            >
+              <div className="flex items-start gap-4">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
+                  style={{ background: 'var(--glass-heavy)' }}
+                >
+                  <Icon className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-1">{preset.name}</h3>
+                  <p className="text-xs text-gray-500 mb-2">{preset.description}</p>
+                  <div className="flex gap-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'var(--glass-heavy)', color: 'var(--accent-primary)' }}>
+                      {preset.type.toUpperCase()}
                     </span>
-                  )}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'var(--glass-heavy)', color: 'var(--accent-secondary)' }}>
+                      Port {preset.port}
+                    </span>
+                    {preset.useTls && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">
+                        TLS
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -614,11 +631,15 @@ export function SetupWizard() {
           <div className="flex items-center gap-3 mb-3">
             <div
               className={cn(
-                'w-10 h-10 rounded-full flex items-center justify-center text-xl',
+                'w-10 h-10 rounded-full flex items-center justify-center',
                 testResult.success ? 'bg-green-500/10' : 'bg-red-500/10',
               )}
             >
-              {testResult.success ? '✓' : '✗'}
+              {testResult.success ? (
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-400" />
+              )}
             </div>
             <div>
               <h3
@@ -721,26 +742,6 @@ export function SetupWizard() {
           />
         </div>
 
-        {/* Avatar */}
-        <div>
-          <label className="text-xs text-gray-400 mb-2 block">Avatar</label>
-          <div className="flex gap-2 flex-wrap">
-            {clawAvatars.map((a) => (
-              <button
-                key={a}
-                onClick={() => setBotAvatar(a)}
-                className="w-11 h-11 rounded-lg flex items-center justify-center text-xl transition-all"
-                style={{
-                  background: 'var(--glass-light)',
-                  boxShadow: botAvatar === a ? '0 0 0 2px var(--accent-primary)' : undefined,
-                }}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Color */}
         <div>
           <label className="text-xs text-gray-400 mb-2 block">Color Theme</label>
@@ -764,14 +765,14 @@ export function SetupWizard() {
           <p className="text-[10px] text-gray-500 mb-3">Preview</p>
           <div className="flex items-center gap-4">
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center"
               style={{
                 background: `${botColor}15`,
                 border: `2px solid ${botColor}50`,
                 boxShadow: `0 0 20px ${botColor}30`,
               }}
             >
-              {botAvatar}
+              <Bot className="w-6 h-6" style={{ color: botColor }} />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white">{botName || 'Unnamed Bot'}</h3>
@@ -789,8 +790,12 @@ export function SetupWizard() {
 
   const renderSummary = () => (
     <div className="max-w-2xl mx-auto text-center">
-      <div className="text-5xl mb-4">
-        {testResult?.success ? '🎉' : '⚙️'}
+      <div className="mb-4">
+        {testResult?.success ? (
+          <CheckCircle2 className="w-12 h-12 mx-auto text-green-400" />
+        ) : (
+          <Settings className="w-12 h-12 mx-auto" style={{ color: 'var(--accent-primary)' }} />
+        )}
       </div>
       <h2 className="text-2xl font-bold text-white mb-2">
         {testResult?.success ? 'All Set!' : 'Configuration Complete'}
@@ -854,16 +859,19 @@ export function SetupWizard() {
         <h3 className="text-sm font-semibold text-white mb-3">What&apos;s Next?</h3>
         <div className="space-y-2">
           {[
-            { icon: '🦀', text: 'Go to Claw Manager to connect and manage your bot' },
-            { icon: '⚡', text: 'Assign AI agents to your bot in Team Structure' },
-            { icon: '☰', text: 'Create tasks and assign them to your bot\'s agents' },
-            { icon: '📡', text: 'Monitor real-time status in the Dashboard' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: 'var(--glass-light)' }}>
-              <span>{item.icon}</span>
-              <span className="text-xs text-gray-300">{item.text}</span>
-            </div>
-          ))}
+            { icon: Bot, text: 'Go to Claw Manager to connect and manage your bot' },
+            { icon: Users, text: 'Assign AI agents to your bot in Team Structure' },
+            { icon: KanbanSquare, text: 'Create tasks and assign them to your bot\'s agents' },
+            { icon: Activity, text: 'Monitor real-time status in the Dashboard' },
+          ].map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div key={i} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: 'var(--glass-light)' }}>
+                <Icon className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent-primary)' }} />
+                <span className="text-xs text-gray-300">{item.text}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -886,8 +894,8 @@ export function SetupWizard() {
       case 'welcome': return true;
       case 'connection-type': return selectedPreset !== null;
       case 'endpoint': return endpoint.trim().length > 0 && port > 0;
-      case 'test': return true; // can always skip test
-      case 'bot-config': return true; // name is optional
+      case 'test': return true;
+      case 'bot-config': return true;
       case 'summary': return true;
     }
   };
@@ -919,7 +927,11 @@ export function SetupWizard() {
                   boxShadow: i === currentIndex ? '0 0 15px var(--accent-glow)' : undefined,
                 }}
               >
-                {i < currentIndex ? '✓' : i + 1}
+                {i < currentIndex ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  i + 1
+                )}
               </div>
               <span
                 className={cn(

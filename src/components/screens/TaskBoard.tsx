@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMissionControl } from '@/lib/store';
 import type { Task, TaskStatus, TaskPriority } from '@/lib/types';
 import { cn, toLabel, timeAgo, getPriorityColor, generateId } from '@/lib/utils';
+import { X, ArrowRight } from 'lucide-react';
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [
   { id: 'idea', label: 'Ideas', color: '#c084fc' },
@@ -166,7 +167,7 @@ export function TaskBoard() {
                         onClick={() => deleteTask(task.id)}
                         className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-xs text-gray-500 hover:text-red-400 transition-all p-1"
                       >
-                        ✕
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
 
@@ -204,7 +205,7 @@ export function TaskBoard() {
                             className="text-[10px] px-2 py-1 rounded transition-colors"
                             style={{ background: 'var(--glass-light)', color: col.color, border: `1px solid ${col.color}30` }}
                           >
-                            → {col.label}
+                            {col.label}
                           </button>
                         );
                       })}
