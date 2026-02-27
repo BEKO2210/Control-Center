@@ -15,6 +15,7 @@ import {
   Link,
   X,
   Shell,
+  ClipboardCheck,
 } from 'lucide-react';
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
   { id: 'memory', label: 'Memory', icon: Brain },
   { id: 'team', label: 'Team Structure', icon: Users },
   { id: 'office', label: 'Digital Office', icon: Building2 },
+  { id: 'code-review', label: 'Code Review', icon: ClipboardCheck },
 ];
 
 const settingsNav = [
