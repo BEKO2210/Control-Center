@@ -8,3 +8,5 @@ export { DigitalOffice } from './DigitalOffice';
 export { ShellSelector } from './ShellSelector';
 export { ClawManager } from './ClawManager';
 export { SetupWizard } from './SetupWizard';
+export { CodeReviewWizard } from './CodeReviewWizard';
+export { CodeReviewDashboard } from './CodeReviewDashboard';

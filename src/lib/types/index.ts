@@ -225,6 +225,39 @@ export interface ClawWithConnection extends Claw {
   connection?: ClawConnection;
 }
 
+// --- Code Review Wizard Types ---
+
+export type ReviewCategory =
+  | 'code-quality'
+  | 'security'
+  | 'performance'
+  | 'testing'
+  | 'documentation'
+  | 'architecture'
+  | 'error-handling'
+  | 'accessibility';
+
+export type ReviewSeverity = 'critical' | 'warning' | 'suggestion' | 'info';
+
+export interface ReviewCheckItem {
+  id: string;
+  category: ReviewCategory;
+  title: string;
+  description: string;
+  severity: ReviewSeverity;
+  enabled: boolean;
+}
+
+export interface ReviewProfile {
+  id: string;
+  name: string;
+  description: string;
+  categories: ReviewCategory[];
+  checks: ReviewCheckItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 // --- Dashboard Stats ---
 
 export interface DashboardStats {

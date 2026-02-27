@@ -17,6 +17,8 @@ import type {
   AgentActivity,
   DashboardStats,
   ClawConnection,
+  ReviewProfile,
+  ReviewCategory,
 } from '@/lib/types';
 import { defaultShellId } from '@/shells/registry';
 import { generateId } from '@/lib/utils';
@@ -93,6 +95,16 @@ interface MissionControlState {
   // Wizard state
   wizardCompleted: boolean;
   setWizardCompleted: (completed: boolean) => void;
+
+  // Code Review Wizard state
+  codeReviewWizardCompleted: boolean;
+  setCodeReviewWizardCompleted: (completed: boolean) => void;
+  reviewProfiles: ReviewProfile[];
+  activeReviewProfileId: string | null;
+  addReviewProfile: (profile: Omit<ReviewProfile, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateReviewProfile: (id: string, updates: Partial<ReviewProfile>) => void;
+  deleteReviewProfile: (id: string) => void;
+  setActiveReviewProfile: (id: string | null) => void;
 
   // Reset
   resetToEmpty: () => void;
@@ -324,6 +336,42 @@ export const useMissionControl = create<MissionControlState>()(
       wizardCompleted: false,
       setWizardCompleted: (completed) => set({ wizardCompleted: completed }),
 
+      // --- Code Review Wizard ---
+      codeReviewWizardCompleted: false,
+      setCodeReviewWizardCompleted: (completed) => set({ codeReviewWizardCompleted: completed }),
+      reviewProfiles: [],
+      activeReviewProfileId: null,
+
+      addReviewProfile: (profile) => {
+        const now = new Date().toISOString();
+        const id = generateId('rp');
+        set((state) => ({
+          reviewProfiles: [
+            ...state.reviewProfiles,
+            { ...profile, id, createdAt: now, updatedAt: now },
+          ],
+          activeReviewProfileId: state.activeReviewProfileId || id,
+        }));
+      },
+
+      updateReviewProfile: (id, updates) =>
+        set((state) => ({
+          reviewProfiles: state.reviewProfiles.map((p) =>
+            p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p,
+          ),
+        })),
+
+      deleteReviewProfile: (id) =>
+        set((state) => ({
+          reviewProfiles: state.reviewProfiles.filter((p) => p.id !== id),
+          activeReviewProfileId:
+            state.activeReviewProfileId === id
+              ? state.reviewProfiles.find((p) => p.id !== id)?.id || null
+              : state.activeReviewProfileId,
+        })),
+
+      setActiveReviewProfile: (id) => set({ activeReviewProfileId: id }),
+
       // --- Reset ---
       resetToEmpty: () =>
         set({
@@ -336,6 +384,9 @@ export const useMissionControl = create<MissionControlState>()(
           connections: [],
           notifications: [],
           wizardCompleted: false,
+          codeReviewWizardCompleted: false,
+          reviewProfiles: [],
+          activeReviewProfileId: null,
           activeScreen: 'wizard',
         }),
 
@@ -365,6 +416,9 @@ export const useMissionControl = create<MissionControlState>()(
         claws: state.claws,
         connections: state.connections,
         wizardCompleted: state.wizardCompleted,
+        codeReviewWizardCompleted: state.codeReviewWizardCompleted,
+        reviewProfiles: state.reviewProfiles,
+        activeReviewProfileId: state.activeReviewProfileId,
       }),
     },
   ),

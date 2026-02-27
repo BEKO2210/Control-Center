@@ -12,6 +12,8 @@ import { DigitalOffice } from '@/components/screens/DigitalOffice';
 import { ShellSelector } from '@/components/screens/ShellSelector';
 import { ClawManager } from '@/components/screens/ClawManager';
 import { SetupWizard } from '@/components/screens/SetupWizard';
+import { CodeReviewWizard } from '@/components/screens/CodeReviewWizard';
+import { CodeReviewDashboard } from '@/components/screens/CodeReviewDashboard';
 import { useMissionControl } from '@/lib/store';
 
 const screens: Record<string, React.ComponentType> = {
@@ -25,16 +27,28 @@ const screens: Record<string, React.ComponentType> = {
   shells: ShellSelector,
   claws: ClawManager,
   wizard: SetupWizard,
+  'code-review': CodeReviewDashboard,
+  'code-review-wizard': CodeReviewWizard,
 };
 
 export default function MissionControlPage() {
   const activeScreen = useMissionControl((s) => s.activeScreen);
   const wizardCompleted = useMissionControl((s) => s.wizardCompleted);
   const claws = useMissionControl((s) => s.claws);
+  const codeReviewWizardCompleted = useMissionControl((s) => s.codeReviewWizardCompleted);
 
   // Gate: if no claws connected and wizard not completed, force wizard
   const needsSetup = !wizardCompleted && claws.length === 0;
-  const ActiveScreen = needsSetup ? SetupWizard : (screens[activeScreen] || Dashboard);
+
+  // Gate: when navigating to code-review for the first time, redirect to wizard
+  const needsCodeReviewSetup =
+    activeScreen === 'code-review' && !codeReviewWizardCompleted;
+
+  const ActiveScreen = needsSetup
+    ? SetupWizard
+    : needsCodeReviewSetup
+      ? CodeReviewWizard
+      : (screens[activeScreen] || Dashboard);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden" style={{ background: 'var(--shell-gradient)' }}>
