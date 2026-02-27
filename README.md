@@ -35,7 +35,7 @@
 
 **Clawbot Mission Control** is an open-source AI agent orchestration dashboard. It serves as the command center for your AI workforce -- a persistent workspace where you connect Claw Bot instances, deploy AI agents, manage tasks, content pipelines, schedules, and memories.
 
-**Current State (v1.3.0 -- 26. February 2026):**
+**Current State (v1.4.0 -- 27. February 2026):**
 
 - The app starts completely **empty** -- no mock data, no fake agents, no simulated activity
 - New users are guided through a **Setup Wizard** to connect their first Claw Bot
@@ -623,6 +623,20 @@ Every screen handles the empty case gracefully, guiding users toward the right a
 ## Changelog
 
 All changes to Clawbot Mission Control, listed in reverse chronological order.
+
+### v1.4.0 -- 2026-02-27
+
+**Bug Fixes & Code Quality**
+
+| Area | Description |
+|------|-------------|
+| **fix: REST polling consecutive failure counter** | The REST polling `catch` block claimed to fail after 3 consecutive errors but actually failed on the first. Added a `pollFailures` counter that increments on each failed poll and only marks the connection as error after 3 consecutive failures. Resets on success. (`connectionService.ts`) |
+| **fix: truncate() guard for small maxLength** | `truncate(str, maxLength)` produced incorrect output when `maxLength <= 3` (e.g., returning `"..."` for `maxLength=2`). Added guard: if `maxLength <= 3`, return hard-truncated string without ellipsis. (`utils/index.ts`) |
+| **fix: connection ID mutation in ClawManager** | `handleConnect` created a new `ConnectionManager` entry on every connect attempt without cleaning up the previous one, causing orphaned connections. Now cleans up existing ConnectionManager entries before creating new ones. (`ClawManager.tsx`) |
+| **fix: async cleanup in SetupWizard test** | `runTest` set React state after `await` without checking if the component was still mounted. Added `mountedRef` guard to prevent state updates on unmounted components. (`SetupWizard.tsx`) |
+| **chore: remove unused dependencies** | Removed `date-fns`, `uuid`, and `@types/uuid` from `package.json` -- none were imported anywhere in the codebase. |
+| **chore: bump version to 1.4.0** | Updated `package.json` version from `1.0.0` to `1.4.0` to match release history. |
+| **style: replace HTML entities in JSX** | Replaced `&mdash;` HTML entities with Unicode em dash characters in `ClawManager.tsx` and `SetupWizard.tsx` for idiomatic React/JSX. |
 
 ### v1.3.0 -- 2026-02-26
 

@@ -158,6 +158,7 @@ export function SetupWizard() {
   // Logs
   const [logs, setLogs] = useState<Array<{ time: string; message: string; type: 'info' | 'success' | 'error' }>>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
 
   const addLog = useCallback((message: string, type: 'info' | 'success' | 'error' = 'info') => {
     const time = new Date().toLocaleTimeString();
@@ -167,6 +168,12 @@ export function SetupWizard() {
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // --- Navigation ---
   const currentIndex = STEPS.indexOf(currentStep);
@@ -231,6 +238,8 @@ export function SetupWizard() {
         authToken || undefined,
       );
 
+      if (!mountedRef.current) return;
+
       setTestResult(result);
 
       if (result.success) {
@@ -245,11 +254,14 @@ export function SetupWizard() {
         }
       }
     } catch (err) {
+      if (!mountedRef.current) return;
       const message = err instanceof Error ? err.message : 'Unexpected error';
       setTestResult({ success: false, error: message });
       addLog(`Error: ${message}`, 'error');
     } finally {
-      setTesting(false);
+      if (mountedRef.current) {
+        setTesting(false);
+      }
     }
   };
 
@@ -313,7 +325,7 @@ export function SetupWizard() {
       <p className="text-gray-400 mb-8 leading-relaxed">
         This wizard will guide you through connecting a Claw Bot instance to your Mission Control.
         Whether it&apos;s a local development server, a cloud-hosted AI agent,
-        an ESP32 hardware controller, or an MQTT IoT device &mdash; we&apos;ll get it connected.
+        an ESP32 hardware controller, or an MQTT IoT device — we&apos;ll get it connected.
       </p>
 
       <div className="glass-panel p-6 text-left mb-8">
