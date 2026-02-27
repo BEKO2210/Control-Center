@@ -36,6 +36,7 @@ class ConnectionManager {
   private pollers: Map<string, ReturnType<typeof setInterval>> = new Map();
   private heartbeats: Map<string, ReturnType<typeof setInterval>> = new Map();
   private reconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  private pollFailures: Map<string, number> = new Map();
   private listeners: ConnectionEventHandler[] = [];
 
   // --- Event System ---
@@ -300,6 +301,8 @@ class ConnectionManager {
   ) {
     // Clear existing poller
     this.stopRestPolling(connectionId);
+    // Reset failure counter
+    this.pollFailures.set(connectionId, 0);
 
     const poll = async () => {
       try {
@@ -320,6 +323,9 @@ class ConnectionManager {
             this.connections.set(connectionId, { ...conn });
           }
 
+          // Reset failure counter on success
+          this.pollFailures.set(connectionId, 0);
+
           this.emit({
             type: 'message',
             connectionId,
@@ -331,11 +337,16 @@ class ConnectionManager {
         }
       } catch {
         // Poll failure - mark as error after 3 consecutive failures
-        const conn = this.connections.get(connectionId);
-        if (conn && conn.status === 'connected') {
-          this.updateStatus(connectionId, 'error', 'Connection lost');
-          this.stopRestPolling(connectionId);
-          this.scheduleReconnect(connectionId, 5000);
+        const failures = (this.pollFailures.get(connectionId) ?? 0) + 1;
+        this.pollFailures.set(connectionId, failures);
+
+        if (failures >= 3) {
+          const conn = this.connections.get(connectionId);
+          if (conn && conn.status === 'connected') {
+            this.updateStatus(connectionId, 'error', 'Connection lost (3 consecutive poll failures)');
+            this.stopRestPolling(connectionId);
+            this.scheduleReconnect(connectionId, 5000);
+          }
         }
       }
     };
@@ -351,6 +362,7 @@ class ConnectionManager {
       clearInterval(poller);
       this.pollers.delete(connectionId);
     }
+    this.pollFailures.delete(connectionId);
   }
 
   // --- Heartbeat ---

@@ -104,6 +104,12 @@ export function ClawManager() {
 
     setConnectingId(claw.id);
 
+    // Clean up any existing connection in the ConnectionManager for this claw
+    const existingMgrConn = connectionManager.getConnectionByClawId(conn.clawId);
+    if (existingMgrConn) {
+      connectionManager.removeConnection(existingMgrConn.id);
+    }
+
     const mgrConn = connectionManager.createConnection(
       conn.clawId,
       conn.type,
@@ -114,6 +120,7 @@ export function ClawManager() {
       conn.authToken,
     );
 
+    // Sync the store connection ID with the new ConnectionManager entry
     updateConnection(conn.id, { id: mgrConn.id });
 
     const success = await connectionManager.connect(mgrConn.id);
@@ -164,7 +171,7 @@ export function ClawManager() {
         <div className="mb-8">
           <h2 className="text-xl font-bold text-white mb-2">Claw Manager</h2>
           <p className="text-sm text-gray-400">
-            Manage connected Claws &mdash; independent bot instances that can join your Mission Control.
+            Manage connected Claws — independent bot instances that can join your Mission Control.
           </p>
         </div>
 
@@ -198,7 +205,7 @@ export function ClawManager() {
       <div className="mb-8">
         <h2 className="text-xl font-bold text-white mb-2">Claw Manager</h2>
         <p className="text-sm text-gray-400">
-          Manage connected Claws &mdash; independent bot instances that can join your Mission Control.
+          Manage connected Claws — independent bot instances that can join your Mission Control.
           Each Claw brings its own agents and capabilities, creating a collaborative swarm.
         </p>
       </div>
@@ -612,7 +619,7 @@ export function ClawManager() {
                       <Bot className="w-3.5 h-3.5 text-gray-400" />
                       <span className="text-xs text-white">{agent.name}</span>
                       <span className="text-[10px] text-gray-500">
-                        &mdash; {agent.role}
+                        — {agent.role}
                       </span>
                       <div
                         className={`ml-auto status-dot ${agent.activity}`}
