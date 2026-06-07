@@ -17,6 +17,10 @@ export interface Task {
   priority: TaskPriority;
   relatedFiles: string[];
   tags: string[];
+  /** Owning claw instance — null/undefined means "global / unassigned". */
+  clawId?: string | null;
+  /** External id reported by the claw, used to reconcile remote updates. */
+  externalId?: string;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -97,6 +101,8 @@ export interface Memory {
   category: MemoryCategory;
   source: string;
   tags: string[];
+  /** Owning claw instance — null/undefined means "global / unassigned". */
+  clawId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -122,6 +128,10 @@ export interface Agent {
   currentTasks: string[]; // task IDs
   activity: AgentActivity;
   clawId: string; // which claw instance this agent belongs to
+  /** External id reported by the claw, used to reconcile remote updates. */
+  externalId?: string;
+  /** Last time the claw reported on this agent (ISO string). */
+  lastSeen?: string;
   stats: {
     tasksCompleted: number;
     tasksInProgress: number;
@@ -219,6 +229,65 @@ export interface ClawProtocolMessage {
   timestamp: string;
   id?: string;
 }
+
+// --- Inbound Realtime Protocol (Claw → Mission Control) ---
+//
+// Claws speak a small JSON protocol. Every inbound message is one of these
+// discriminated shapes; the RealtimeEngine routes on `type` and dispatches
+// the matching Zustand store action.
+
+export type InboundMessageType =
+  | 'task_update'
+  | 'agent_status'
+  | 'agents_list'
+  | 'memory_write'
+  | 'status'
+  | 'heartbeat';
+
+/** A task as reported by a claw. All fields optional except a stable id. */
+export interface RemoteTaskPayload {
+  id: string;
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  assignedTo?: TaskAssignee;
+  tags?: string[];
+  relatedFiles?: string[];
+}
+
+/** An agent's live status as reported by a claw. */
+export interface RemoteAgentPayload {
+  id: string;
+  name?: string;
+  role?: AgentRole;
+  activity?: AgentActivity;
+  currentTasks?: string[];
+}
+
+/** A memory the claw wants persisted in Mission Control. */
+export interface RemoteMemoryPayload {
+  title: string;
+  content: string;
+  category?: MemoryCategory;
+  source?: string;
+  tags?: string[];
+}
+
+/** A coarse claw health/status snapshot. */
+export interface RemoteStatusPayload {
+  agents?: RemoteAgentPayload[];
+  tasks?: RemoteTaskPayload[];
+  online?: boolean;
+}
+
+export type InboundMessage =
+  | { type: 'task_update'; payload: RemoteTaskPayload }
+  | { type: 'agent_status'; payload: RemoteAgentPayload }
+  | { type: 'agents_list'; payload: RemoteAgentPayload[] }
+  | { type: 'memory_write'; payload: RemoteMemoryPayload }
+  | { type: 'status'; payload: RemoteStatusPayload }
+  | { type: 'heartbeat'; payload?: unknown };
 
 // Extended Claw with connection info
 export interface ClawWithConnection extends Claw {

@@ -10,6 +10,12 @@ import type {
   ClawProtocolMessage,
 } from '@/lib/types';
 import { generateId } from '@/lib/utils';
+import {
+  HEARTBEAT_INTERVAL_MS,
+  MAX_POLL_FAILURES,
+  REALTIME_POLL_INTERVAL_MS,
+  RECONNECT_BASE_DELAY_MS,
+} from '@/lib/constants';
 
 // --- Event Types ---
 
@@ -220,8 +226,8 @@ class ConnectionManager {
             'error',
             `Connection closed: ${event.reason || 'Unknown reason'} (code: ${event.code})`,
           );
-          // Auto-reconnect after 5 seconds
-          this.scheduleReconnect(conn.id, 5000);
+          // Auto-reconnect after the base backoff delay
+          this.scheduleReconnect(conn.id, RECONNECT_BASE_DELAY_MS);
         }
       };
     });
@@ -336,23 +342,28 @@ class ConnectionManager {
           this.stopRestPolling(connectionId);
         }
       } catch {
-        // Poll failure - mark as error after 3 consecutive failures
+        // DEFEKT-6 (verified): count CONSECUTIVE failures only. The counter is
+        // reset to 0 on every success above and on (re)start, and deleted in
+        // stopRestPolling — so a single blip never errors the connection.
         const failures = (this.pollFailures.get(connectionId) ?? 0) + 1;
         this.pollFailures.set(connectionId, failures);
 
-        if (failures >= 3) {
+        if (failures >= MAX_POLL_FAILURES) {
           const conn = this.connections.get(connectionId);
           if (conn && conn.status === 'connected') {
-            this.updateStatus(connectionId, 'error', 'Connection lost (3 consecutive poll failures)');
+            this.updateStatus(
+              connectionId,
+              'error',
+              `Connection lost (${MAX_POLL_FAILURES} consecutive poll failures)`,
+            );
             this.stopRestPolling(connectionId);
-            this.scheduleReconnect(connectionId, 5000);
+            this.scheduleReconnect(connectionId, RECONNECT_BASE_DELAY_MS);
           }
         }
       }
     };
 
-    // Poll every 5 seconds
-    const interval = setInterval(poll, 5000);
+    const interval = setInterval(poll, REALTIME_POLL_INTERVAL_MS);
     this.pollers.set(connectionId, interval);
   }
 
@@ -382,8 +393,7 @@ class ConnectionManager {
       }
     };
 
-    // Heartbeat every 15 seconds
-    const interval = setInterval(beat, 15000);
+    const interval = setInterval(beat, HEARTBEAT_INTERVAL_MS);
     this.heartbeats.set(connectionId, interval);
   }
 

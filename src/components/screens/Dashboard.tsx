@@ -22,19 +22,30 @@ export function Dashboard() {
   const contentItems = useMissionControl((s) => s.contentItems);
   const events = useMissionControl((s) => s.events);
   const claws = useMissionControl((s) => s.claws);
+  const selectedClawId = useMissionControl((s) => s.selectedClawId);
+  const setSelectedClawId = useMissionControl((s) => s.setSelectedClawId);
   const setActiveScreen = useMissionControl((s) => s.setActiveScreen);
 
+  // Multi-Claw isolation (DEFEKT-5): when a claw is selected, scope the
+  // claw-owned collections to it. Content/events have no claw owner and stay
+  // global.
+  const matchesClaw = (clawId?: string | null) =>
+    !selectedClawId || clawId === selectedClawId;
+  const fTasks = tasks.filter((t) => matchesClaw(t.clawId));
+  const fAgents = agents.filter((a) => matchesClaw(a.clawId));
+  const fMemories = memories.filter((m) => matchesClaw(m.clawId));
+
   const stats = [
-    { label: 'Total Tasks', value: tasks.length, icon: KanbanSquare, color: '#06b6d4', screen: 'tasks' },
-    { label: 'Completed', value: tasks.filter((t) => t.status === 'done').length, icon: CheckCircle2, color: '#10b981', screen: 'tasks' },
-    { label: 'Active Agents', value: agents.filter((a) => a.activity !== 'idle').length, icon: Zap, color: '#8b5cf6', screen: 'team' },
-    { label: 'Memories', value: memories.length, icon: Brain, color: '#f59e0b', screen: 'memory' },
+    { label: 'Total Tasks', value: fTasks.length, icon: KanbanSquare, color: '#06b6d4', screen: 'tasks' },
+    { label: 'Completed', value: fTasks.filter((t) => t.status === 'done').length, icon: CheckCircle2, color: '#10b981', screen: 'tasks' },
+    { label: 'Active Agents', value: fAgents.filter((a) => a.activity !== 'idle').length, icon: Zap, color: '#8b5cf6', screen: 'team' },
+    { label: 'Memories', value: fMemories.length, icon: Brain, color: '#f59e0b', screen: 'memory' },
     { label: 'Content Items', value: contentItems.length, icon: Play, color: '#ec4899', screen: 'pipeline' },
     { label: 'Scheduled', value: events.filter((e) => e.status === 'scheduled').length, icon: Clock, color: '#2dd4bf', screen: 'calendar' },
   ];
 
-  const activeAgents = agents.filter((a) => a.activity !== 'idle');
-  const recentTasks = [...tasks].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
+  const activeAgents = fAgents.filter((a) => a.activity !== 'idle');
+  const recentTasks = [...fTasks].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
 
   // Empty state when nothing is set up
   if (claws.length === 0 && agents.length === 0 && tasks.length === 0) {
@@ -96,6 +107,38 @@ export function Dashboard() {
           <Shell className="w-16 h-16" style={{ color: 'var(--accent-primary)' }} />
         </div>
       </div>
+
+      {/* Claw Filter (DEFEKT-5) — only shown when more than one claw exists */}
+      {claws.length > 1 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] text-gray-500 mr-1">Filter by Claw:</span>
+          <button
+            onClick={() => setSelectedClawId(null)}
+            className="text-[11px] px-3 py-1 rounded-full transition-all"
+            style={{
+              background: selectedClawId === null ? 'var(--accent-primary)' : 'var(--glass-heavy)',
+              color: selectedClawId === null ? '#0a0a1a' : '#9ca3af',
+            }}
+          >
+            All Claws
+          </button>
+          {claws.map((claw) => (
+            <button
+              key={claw.id}
+              onClick={() => setSelectedClawId(claw.id)}
+              className="text-[11px] px-3 py-1 rounded-full transition-all flex items-center gap-1.5"
+              style={{
+                background: selectedClawId === claw.id ? `${claw.color}30` : 'var(--glass-heavy)',
+                color: selectedClawId === claw.id ? claw.color : '#9ca3af',
+                border: selectedClawId === claw.id ? `1px solid ${claw.color}` : '1px solid transparent',
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: claw.color }} />
+              {claw.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -168,7 +211,7 @@ export function Dashboard() {
             </button>
           </div>
           <div className="space-y-3">
-            {agents.length === 0 ? (
+            {fAgents.length === 0 ? (
               <div className="text-center py-4">
                 <Users className="w-8 h-8 mx-auto mb-2 text-gray-600" />
                 <p className="text-xs text-gray-500">No agents deployed yet</p>

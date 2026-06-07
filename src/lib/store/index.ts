@@ -23,6 +23,7 @@ import type {
 import { defaultShellId } from '@/shells/registry';
 import { generateId } from '@/lib/utils';
 import { defaultAgents } from '@/agents/defaults';
+import { STORE_SCHEMA_VERSION } from '@/lib/constants';
 
 // --- Mission Control Store ---
 
@@ -71,7 +72,12 @@ interface MissionControlState {
   addAgent: (agent: Omit<Agent, 'id' | 'createdAt'>) => void;
   updateAgent: (id: string, updates: Partial<Agent>) => void;
   setAgentActivity: (id: string, activity: AgentActivity) => void;
+  setClawAgentsIdle: (clawId: string) => void;
   deleteAgent: (id: string) => void;
+
+  // Multi-Claw dashboard filter (DEFEKT-5)
+  selectedClawId: string | null;
+  setSelectedClawId: (clawId: string | null) => void;
 
   // Claws (Multi-Claw System)
   claws: Claw[];
@@ -259,8 +265,19 @@ export const useMissionControl = create<MissionControlState>()(
           agents: state.agents.map((a) => (a.id === id ? { ...a, activity } : a)),
         })),
 
+      setClawAgentsIdle: (clawId) =>
+        set((state) => ({
+          agents: state.agents.map((a) =>
+            a.clawId === clawId ? { ...a, activity: 'idle' as AgentActivity } : a,
+          ),
+        })),
+
       deleteAgent: (id) =>
         set((state) => ({ agents: state.agents.filter((a) => a.id !== id) })),
+
+      // --- Multi-Claw Filter ---
+      selectedClawId: null,
+      setSelectedClawId: (clawId) => set({ selectedClawId: clawId }),
 
       // --- Claws ---
       claws: [],
@@ -383,6 +400,7 @@ export const useMissionControl = create<MissionControlState>()(
           claws: [],
           connections: [],
           notifications: [],
+          selectedClawId: null,
           wizardCompleted: false,
           codeReviewWizardCompleted: false,
           reviewProfiles: [],
@@ -406,6 +424,43 @@ export const useMissionControl = create<MissionControlState>()(
     }),
     {
       name: 'clawbot-mission-control',
+      version: STORE_SCHEMA_VERSION,
+      /**
+       * Schema migration runner (DEFEKT-8). Runs whenever the persisted
+       * `version` is older than {@link STORE_SCHEMA_VERSION}, transforming the
+       * stored blob step-by-step so a breaking schema change never wipes a
+       * user's data.
+       *
+       * @param persistedState - The raw object loaded from localStorage.
+       * @param version - The schema version the blob was written with.
+       * @returns A state object matching the current schema.
+       * @example
+       *   // v1 (no clawId on tasks) → v2 (clawId backfilled to null)
+       *   migrate({ tasks: [{ id: 't1' }] }, 1)
+       */
+      migrate: (persistedState: unknown, version: number) => {
+        const state = (persistedState ?? {}) as Record<string, unknown>;
+
+        // v1 → v2: introduce multi-claw isolation. Backfill `clawId: null`
+        // on every task and memory so existing items render as "global".
+        if (version < 2) {
+          if (Array.isArray(state.tasks)) {
+            state.tasks = (state.tasks as Task[]).map((t) => ({
+              clawId: null,
+              ...t,
+            }));
+          }
+          if (Array.isArray(state.memories)) {
+            state.memories = (state.memories as Memory[]).map((m) => ({
+              clawId: null,
+              ...m,
+            }));
+          }
+          state.selectedClawId = null;
+        }
+
+        return state as unknown as MissionControlState;
+      },
       partialize: (state) => ({
         activeShellId: state.activeShellId,
         tasks: state.tasks,
@@ -415,6 +470,7 @@ export const useMissionControl = create<MissionControlState>()(
         agents: state.agents,
         claws: state.claws,
         connections: state.connections,
+        selectedClawId: state.selectedClawId,
         wizardCompleted: state.wizardCompleted,
         codeReviewWizardCompleted: state.codeReviewWizardCompleted,
         reviewProfiles: state.reviewProfiles,

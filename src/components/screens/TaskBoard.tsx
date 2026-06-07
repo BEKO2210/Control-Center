@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMissionControl } from '@/lib/store';
+import { aiBridge, isAiEnabled } from '@/lib/services/aiBridge';
 import type { Task, TaskStatus, TaskPriority } from '@/lib/types';
-import { cn, toLabel, timeAgo, getPriorityColor, generateId } from '@/lib/utils';
-import { X, ArrowRight } from 'lucide-react';
+import { cn, toLabel, timeAgo, getPriorityColor } from '@/lib/utils';
+import { X, Sparkles } from 'lucide-react';
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [
   { id: 'idea', label: 'Ideas', color: '#c084fc' },
@@ -25,6 +26,24 @@ export function TaskBoard() {
   const [newPriority, setNewPriority] = useState<TaskPriority>('medium');
   const [newStatus, setNewStatus] = useState<TaskStatus>('idea');
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
+  // AIBridge availability is session-scoped (sessionStorage), so it lives in
+  // local state rather than the persisted store (DEFEKT-4).
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiBusyId, setAiBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAiEnabled(isAiEnabled());
+  }, []);
+
+  const runWithAi = async (task: Task) => {
+    if (aiBusyId) return;
+    setAiBusyId(task.id);
+    try {
+      await aiBridge.processTask(task);
+    } finally {
+      setAiBusyId(null);
+    }
+  };
 
   const handleAddTask = () => {
     if (!newTitle.trim()) return;
@@ -182,6 +201,26 @@ export function TaskBoard() {
                       <span className="text-[10px] text-gray-600">{task.assignedTo}</span>
                       <span className="text-[10px] text-gray-600">{timeAgo(task.updatedAt)}</span>
                     </div>
+
+                    {/* Run with AI (DEFEKT-4) — only when a Claude key is set */}
+                    {aiEnabled && (task.status === 'idea' || task.status === 'queued') && (
+                      <button
+                        onClick={() => runWithAi(task)}
+                        disabled={aiBusyId === task.id}
+                        className={cn(
+                          'mt-3 w-full text-[10px] px-2 py-1.5 rounded flex items-center justify-center gap-1.5 transition-all',
+                          aiBusyId === task.id && 'opacity-60 cursor-not-allowed',
+                        )}
+                        style={{
+                          background: 'rgba(139,92,246,0.12)',
+                          color: '#a78bfa',
+                          border: '1px solid rgba(139,92,246,0.3)',
+                        }}
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        {aiBusyId === task.id ? 'Dispatching to Claude…' : 'Run with AI'}
+                      </button>
+                    )}
 
                     {/* Tags */}
                     {task.tags.length > 0 && (
