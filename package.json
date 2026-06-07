@@ -1,6 +1,6 @@
 {
   "name": "clawbot-mission-control",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "description": "Clawbot Mission Control — AI Agent Orchestration Dashboard with swappable shells, multi-claw support, and a beautiful dark glassmorphism UI.",
   "author": "BEKO2210",

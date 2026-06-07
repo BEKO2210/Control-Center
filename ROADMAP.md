@@ -10,14 +10,17 @@
 - [x] **DEFEKT-6** — REST poll-failure counter verified + constant-ized
 - [x] **DEFEKT-7** — Setup Wizard `mountedRef` guards on all handlers
 - [x] **DEFEKT-8** — Store schema `version` + `migrate()` (v1 → v2)
+- [x] **AIBridge Phase 2** — Anthropic call moved behind `/api/ai`; server-only
+  `ANTHROPIC_API_KEY` keeps the key out of the browser
+- [x] **npm audit** — cleared non-breaking transitive vulns (9 → 6)
 
 ## Next (prioritized)
 
-1. **AIBridge Phase 2** — Move the Anthropic call behind a Next.js API route so
-   the key never touches the browser. Removes the `dangerous-direct-browser`
-   header.
+1. **Next 14 → 16 migration** — The remaining 6 audit vulns (all DoS/cache-
+   poisoning in `next` + its eslint glob chain) only fix via a major upgrade.
+   Needs a dedicated run with the breaking-changes guide and a full smoke test.
 2. **Auto-dispatch** — Have the `AgentScheduler` pull queued AI tasks
-   automatically when a key is set, instead of a manual "Run with AI" click.
+   automatically when AI is available, instead of a manual "Run with AI" click.
 3. **Test harness** — Add Vitest and cover: poll-failure counter, store
    migration, and the `RealtimeEngine` message router.
 
