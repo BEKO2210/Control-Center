@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMissionControl } from '@/lib/store';
-import { aiBridge, isAiEnabled } from '@/lib/services/aiBridge';
+import { aiBridge, checkAiAvailability } from '@/lib/services/aiBridge';
 import type { Task, TaskStatus, TaskPriority } from '@/lib/types';
 import { cn, toLabel, timeAgo, getPriorityColor } from '@/lib/utils';
 import { X, Sparkles } from 'lucide-react';
@@ -32,7 +32,13 @@ export function TaskBoard() {
   const [aiBusyId, setAiBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    setAiEnabled(isAiEnabled());
+    let active = true;
+    checkAiAvailability().then((ready) => {
+      if (active) setAiEnabled(ready);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const runWithAi = async (task: Task) => {

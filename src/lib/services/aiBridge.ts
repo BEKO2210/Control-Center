@@ -3,24 +3,24 @@
 // Turns a board task into a real Claude completion and writes the result back
 // into Mission Control as a Memory + a task status transition.
 //
-// Why a hand-rolled fetch instead of the Anthropic SDK?
-//  - Zero extra dependency weight (the SDK pulls in a large transitive tree).
-//  - Phase 1 is intentionally backend-less: the call runs straight from the
-//    browser, gated behind an explicit opt-in API key.
+// Phase 2: the actual Anthropic call now goes through the server route at
+// `/api/ai`, so a deployment can keep the key server-side (ANTHROPIC_API_KEY)
+// and the browser never needs the direct-browser-access escape hatch. The
+// backend-less local mode still works: the session key is forwarded to the
+// route via the `x-client-key` header, used for that request only.
 //
-// SECURITY: the key is held in sessionStorage only. It is never written to the
-// persisted Zustand/localStorage blob, so it dies with the browser session.
+// SECURITY: the client-held key lives in sessionStorage only. It is never
+// written to the persisted Zustand/localStorage blob, so it dies with the
+// browser session. In a real deployment, prefer the server env var so no key
+// ever reaches the browser at all.
 // ============================================================================
 
 import { useMissionControl } from '@/lib/store';
 import type { Task } from '@/lib/types';
-import {
-  ANTHROPIC_API_URL,
-  ANTHROPIC_API_VERSION,
-  AI_BRIDGE_MAX_TOKENS,
-  AI_BRIDGE_MODEL,
-  CLAUDE_API_KEY_STORAGE,
-} from '@/lib/constants';
+import { CLAUDE_API_KEY_STORAGE } from '@/lib/constants';
+
+/** Local API route that proxies to Anthropic (server-side). */
+const AI_ROUTE = '/api/ai';
 
 const isBrowser = (): boolean => typeof window !== 'undefined';
 
@@ -63,23 +63,39 @@ export function getApiKey(): string | null {
 }
 
 /**
- * Whether the AIBridge has everything it needs to dispatch a task.
+ * Synchronous best-effort check: true when a client session key is present.
+ * Does not see a server-side key — use {@link checkAiAvailability} for that.
  *
- * @returns true when a non-empty API key is present.
+ * @returns true when a non-empty client key is present.
  * @example if (isAiEnabled()) bridge.processTask(task)
  */
 export function isAiEnabled(): boolean {
   return Boolean(getApiKey());
 }
 
-interface AnthropicTextBlock {
-  type: string;
-  text?: string;
+/**
+ * Authoritative availability check. AI is usable when either the server has a
+ * key configured (`ANTHROPIC_API_KEY`) or the client holds a session key.
+ *
+ * @returns Resolves true when a completion can be dispatched.
+ * @example const ready = await checkAiAvailability()
+ */
+export async function checkAiAvailability(): Promise<boolean> {
+  if (getApiKey()) return true;
+  if (!isBrowser()) return false;
+  try {
+    const res = await fetch(AI_ROUTE, { method: 'GET' });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { serverKeyConfigured?: boolean };
+    return Boolean(data.serverKeyConfigured);
+  } catch {
+    return false;
+  }
 }
 
-interface AnthropicResponse {
-  content?: AnthropicTextBlock[];
-  error?: { message?: string };
+interface AiRouteResponse {
+  text?: string;
+  error?: string;
 }
 
 /**
@@ -102,8 +118,6 @@ class AIBridge {
    * @example await aiBridge.processTask(myTask)
    */
   async processTask(task: Task): Promise<boolean> {
-    const apiKey = getApiKey();
-    if (!apiKey) return false; // graceful degradation — AI simply stays off
     if (this.inFlight.has(task.id)) return false;
 
     const store = useMissionControl.getState();
@@ -112,49 +126,35 @@ class AIBridge {
 
     try {
       const prompt = this.buildPrompt(task);
-      const response = await fetch(ANTHROPIC_API_URL, {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      // Forward the session key only when there is no server-side key; the
+      // route prefers ANTHROPIC_API_KEY and ignores this header when set.
+      const clientKey = getApiKey();
+      if (clientKey) headers['x-client-key'] = clientKey;
+
+      const response = await fetch(AI_ROUTE, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': ANTHROPIC_API_VERSION,
-          // Required for direct browser-side calls (Phase 1, no backend).
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: AI_BRIDGE_MODEL,
-          max_tokens: AI_BRIDGE_MAX_TOKENS,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-        signal: AbortSignal.timeout(60_000),
+        headers,
+        body: JSON.stringify({ prompt }),
+        signal: AbortSignal.timeout(65_000),
       });
 
+      const data = (await response.json().catch(() => ({}))) as AiRouteResponse;
+
       if (!response.ok) {
-        let detail = `HTTP ${response.status}`;
-        try {
-          const body = (await response.json()) as AnthropicResponse;
-          if (body.error?.message) detail = body.error.message;
-        } catch {
-          /* keep the status-code fallback */
-        }
-        throw new Error(detail);
+        throw new Error(data.error ?? `HTTP ${response.status}`);
       }
 
-      const data = (await response.json()) as AnthropicResponse;
-      const text =
-        data.content
-          ?.filter((b) => b.type === 'text' && b.text)
-          .map((b) => b.text)
-          .join('\n')
-          .trim() ?? '';
-
+      const text = data.text?.trim() ?? '';
       if (!text) throw new Error('Empty completion from Claude');
 
       store.addMemory({
         title: `AI result: ${task.title}`,
         content: text,
         category: 'learned',
-        source: `ai:${AI_BRIDGE_MODEL}`,
+        source: 'ai:claude',
         tags: ['ai', 'task-result', ...task.tags],
         clawId: task.clawId ?? null,
       });

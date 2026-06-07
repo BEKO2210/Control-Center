@@ -624,6 +624,17 @@ Every screen handles the empty case gracefully, guiding users toward the right a
 
 All changes to Clawbot Mission Control, listed in reverse chronological order.
 
+### v1.6.0 -- 2026-06-07
+
+**Security: AI key moves server-side + dependency audit**
+
+| Area | Description |
+|------|-------------|
+| **security: AIBridge Phase 2 — server route** | The Anthropic call now goes through a new server route (`src/app/api/ai/route.ts`) instead of running in the browser. Deployments set `ANTHROPIC_API_KEY` (a **server-only**, non-`NEXT_PUBLIC_` env var) so the key never reaches the browser at all. The backend-less local mode still works: the wizard's session key is forwarded via the `x-client-key` header for that request only. Removes the `anthropic-dangerous-direct-browser-access` browser escape hatch. |
+| **feat: server-or-client AI availability** | New `checkAiAvailability()` queries `GET /api/ai` so the "Run with AI" button appears when a server key is configured, even if the user never pasted one into the wizard. |
+| **security: npm audit fix** | Cleared 3 transitive devDependency vulnerabilities (`brace-expansion`, `flatted`, `minimatch`, `picomatch`) via non-breaking `npm audit fix` (9 → 6). The remaining 6 require a major Next 14 → 16 upgrade and are deferred to a dedicated migration run (tracked in `ROADMAP.md`). |
+| **docs: .env.example** | Documents `ANTHROPIC_API_KEY` and the server-only security posture. |
+
 ### v1.5.0 -- 2026-06-07
 
 **Architecture: the data actually flows now**

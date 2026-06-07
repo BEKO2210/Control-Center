@@ -2,6 +2,44 @@
 
 A running log of autonomous development cycles. Newest first.
 
+## Run #2 — 2026-06-07
+
+**Focus:** Security — AIBridge Phase 2 (server-side key) + dependency audit.
+
+**Analysis (start of cycle):** `tsc` clean; `ts-prune` only flagged
+barrel/index re-exports (expected); `npm audit` reported 9 vulns (2 moderate,
+7 high). Highest value / lowest risk: clear the non-breaking transitive vulns
+and ship the prioritized ROADMAP item (server-side AI key), which is itself the
+real security fix for the browser-side key introduced in Run #1.
+
+**What I did:**
+- Added `src/app/api/ai/route.ts` — a server-side proxy to Anthropic.
+  - `GET` → `{ serverKeyConfigured }` so the client can light up the AI UI.
+  - `POST { prompt }` → uses `ANTHROPIC_API_KEY` (server env) when present,
+    else the client's `x-client-key` header (local mode), and returns `{ text }`.
+- Refactored `aiBridge.ts` to call `/api/ai` instead of Anthropic directly;
+  dropped the `anthropic-dangerous-direct-browser-access` header. Added
+  `checkAiAvailability()` (server-or-client) and wired the TaskBoard button to
+  it asynchronously.
+- `npm audit fix` (non-`--force`): 9 → 6 vulns. Remaining 6 need Next 16.
+- Added `.env.example` documenting the server-only key.
+
+**What I found:**
+- The remaining 6 vulns are all in `next` and its eslint `glob` chain and only
+  fix via a major (14 → 16) upgrade — out of scope for a hygiene run; queued.
+- The `| tail` pipe on `next build` hides output until completion; redirect to
+  a file and poll instead.
+
+**Quality gates:** `tsc --noEmit` clean · `eslint` clean on changed files (same
+pre-existing font warning) · `next build` ✓ (`/api/ai` registered as ƒ dynamic).
+
+**What's next:** Next 14 → 16 migration run (closes remaining audit items),
+then AgentScheduler auto-dispatch of queued AI tasks.
+
+**Open questions:**
+- Should the server route stream tokens (SSE) for long completions instead of a
+  single 65s-timeout response? Fine for now; revisit if tasks get large.
+
 ## Run #1 — 2026-06-07
 
 **Focus:** Close the eight fundamental architecture defects (DEFEKT-1 … DEFEKT-8).
