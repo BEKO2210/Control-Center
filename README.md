@@ -624,6 +624,28 @@ Every screen handles the empty case gracefully, guiding users toward the right a
 
 All changes to Clawbot Mission Control, listed in reverse chronological order.
 
+### v1.5.0 -- 2026-06-07
+
+**Architecture: the data actually flows now**
+
+This release closes eight fundamental architecture defects. The headline: the
+app was a beautiful shell that received data over the wire and threw it away.
+There was no path from the ConnectionManager into the Zustand store, so React
+never re-rendered and agents never changed state on their own. That path now
+exists.
+
+| Defect | Area | Description |
+|--------|------|-------------|
+| **DEFEKT-1** | Store integration | New `RealtimeEngine` (`realtimeEngine.ts`) subscribes to the ConnectionManager and **dispatches store actions** for every inbound message. Added a typed inbound protocol (`task_update` / `agent_status` / `agents_list` / `memory_write` / `status` / `heartbeat`) and a message router that reconciles remote tasks/agents/memories into the store. |
+| **DEFEKT-2** | UI reactivity | The `RealtimeEngine` singleton starts on app mount and actively polls/listens. Every received datum → store update → automatic React re-render. No manual refresh. |
+| **DEFEKT-3** | Agent autonomy | `RealtimeEngine`'s **AgentScheduler** polls every live claw for agent status every 5s (`AGENT_POLL_INTERVAL_MS`) and upserts `activity` / `currentTasks` / `lastSeen`. When a claw drops, all of its agents are forced to `idle` with a warning notification. |
+| **DEFEKT-4** | Real AI | New `AIBridge` (`aiBridge.ts`) dispatches a board task to Claude (`claude-sonnet-4-20250514`), writes the result back as a Memory, and walks the task `queued → in_progress → review`. Optional **Claude API key** slot added to the Setup Wizard. Key lives in `sessionStorage` only — never persisted. A "Run with AI" button appears on idea/queued cards when a key is set; graceful no-op otherwise. |
+| **DEFEKT-5** | Multi-claw isolation | `Task` and `Memory` gained an optional `clawId`. New `selectedClawId` store filter + a filter bar on the Dashboard scopes tasks/agents/memories to a single claw. |
+| **DEFEKT-6** | REST poll counter | Verified the v1.4.0 `pollFailures` fix: reset-on-success and reset-on-(re)start are correct. Replaced magic numbers with shared constants and documented the verified behaviour. |
+| **DEFEKT-7** | Wizard guards | Added `mountedRef` guards to `completeSetup`, `goNext`, `goBack`, and `goToStep` so fast navigation can't update unmounted state. |
+| **DEFEKT-8** | Store migrations | Added `version: 2` + a `migrate()` runner to the persist middleware. The v1→v2 migration backfills `clawId: null` on existing tasks/memories so a schema change never wipes a user's localStorage. |
+| **chore** | Constants | New `src/lib/constants.ts` centralizes all timing/limit magic numbers. |
+
 ### v1.4.0 -- 2026-02-27
 
 **Bug Fixes & Code Quality**

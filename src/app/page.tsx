@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Dashboard } from '@/components/screens/Dashboard';
@@ -15,6 +16,7 @@ import { SetupWizard } from '@/components/screens/SetupWizard';
 import { CodeReviewWizard } from '@/components/screens/CodeReviewWizard';
 import { CodeReviewDashboard } from '@/components/screens/CodeReviewDashboard';
 import { useMissionControl } from '@/lib/store';
+import { realtimeEngine } from '@/lib/services/realtimeEngine';
 
 const screens: Record<string, React.ComponentType> = {
   dashboard: Dashboard,
@@ -36,6 +38,14 @@ export default function MissionControlPage() {
   const wizardCompleted = useMissionControl((s) => s.wizardCompleted);
   const claws = useMissionControl((s) => s.claws);
   const codeReviewWizardCompleted = useMissionControl((s) => s.codeReviewWizardCompleted);
+
+  // Start the realtime loop once: it subscribes to the ConnectionManager and
+  // drives store updates → automatic re-renders (DEFEKT-1/2/3). Harmless when
+  // no claws are connected; it simply has nothing to poll.
+  useEffect(() => {
+    realtimeEngine.start();
+    return () => realtimeEngine.stop();
+  }, []);
 
   // Gate: if no claws connected and wizard not completed, force wizard
   const needsSetup = !wizardCompleted && claws.length === 0;

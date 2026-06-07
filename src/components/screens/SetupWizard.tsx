@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useMissionControl } from '@/lib/store';
 import { connectionManager } from '@/lib/services/connectionService';
+import { setApiKey } from '@/lib/services/aiBridge';
 import type { ConnectionType, ClawConnection } from '@/lib/types';
 import { cn, generateId } from '@/lib/utils';
 import {
@@ -140,6 +141,9 @@ export function SetupWizard() {
   const [path, setPath] = useState('/ws');
   const [useTls, setUseTls] = useState(false);
   const [authToken, setAuthToken] = useState('');
+  // Optional Claude API key — enables the AIBridge (DEFEKT-4). Held only for
+  // this browser session (sessionStorage), never persisted to localStorage.
+  const [claudeApiKey, setClaudeApiKey] = useState('');
 
   // Test state
   const [testing, setTesting] = useState(false);
@@ -179,18 +183,21 @@ export function SetupWizard() {
   const currentIndex = STEPS.indexOf(currentStep);
 
   const goNext = () => {
+    if (!mountedRef.current) return;
     if (currentIndex < STEPS.length - 1) {
       setCurrentStep(STEPS[currentIndex + 1]);
     }
   };
 
   const goBack = () => {
+    if (!mountedRef.current) return;
     if (currentIndex > 0) {
       setCurrentStep(STEPS[currentIndex - 1]);
     }
   };
 
   const goToStep = (step: WizardStep) => {
+    if (!mountedRef.current) return;
     const targetIndex = STEPS.indexOf(step);
     if (targetIndex <= currentIndex) {
       setCurrentStep(step);
@@ -267,6 +274,11 @@ export function SetupWizard() {
 
   // --- Complete Wizard ---
   const completeSetup = () => {
+    if (!mountedRef.current) return;
+
+    // Persist the optional Claude key for this session only (DEFEKT-4).
+    setApiKey(claudeApiKey.trim());
+
     const clawId = generateId('claw');
 
     const connection: ClawConnection = {
@@ -552,6 +564,26 @@ export function SetupWizard() {
             {connType === 'rest'
               ? 'Sent as Authorization: Bearer header'
               : 'Sent as auth message after connection'}
+          </p>
+        </div>
+
+        {/* Claude API Key (optional) — enables the AIBridge (DEFEKT-4) */}
+        <div>
+          <label className="text-xs text-gray-400 mb-1 block">
+            Claude API Key <span className="text-gray-600">(optional — enables AI)</span>
+          </label>
+          <input
+            type="password"
+            value={claudeApiKey}
+            onChange={(e) => setClaudeApiKey(e.target.value)}
+            placeholder="sk-ant-..."
+            className="input-glass"
+            autoComplete="off"
+          />
+          <p className="text-[10px] text-gray-600 mt-1">
+            Lets Mission Control dispatch board tasks to Claude. Stored only for
+            this browser session — never written to disk. Leave blank to run
+            without AI.
           </p>
         </div>
 
