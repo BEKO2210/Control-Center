@@ -35,13 +35,7 @@
 
 **Clawbot Mission Control** is an open-source AI agent orchestration dashboard. It serves as the command center for your AI workforce -- a persistent workspace where you connect Claw Bot instances, deploy AI agents, manage tasks, content pipelines, schedules, and memories.
 
-**Current State (v2.0.0 -- 10. June 2026):**
 
-- The app starts completely **empty** -- no mock data, no fake agents, no simulated activity
-- New users are guided through a **Setup Wizard** to connect their first Claw Bot
-- Only after connecting a real Claw can agents be created and the full dashboard be used
-- All UI icons are **premium Lucide SVG icons** -- no emojis anywhere
-- Real connection protocols supported: **WebSocket**, **REST API**, **MQTT**
 
 **Key differentiators:**
 
