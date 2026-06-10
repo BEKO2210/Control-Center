@@ -2,6 +2,48 @@
 
 A running log of autonomous development cycles. Newest first.
 
+## Run #3 — 2026-06-10
+
+**Focus:** Next.js 14 → 16 major migration (top ROADMAP item; closes the
+remaining audit vulnerabilities).
+
+**What I did:**
+- Upgraded `next` 14.2 → 16.2, `react`/`react-dom` 18.3 → 19.2,
+  `eslint-config-next` → 16, `eslint` 8 → 9, `lucide-react` → v1, `@types/*`
+  to match; engines → Node ≥20.9. Removed unused `framer-motion` (depcheck).
+- Breaking changes handled:
+  - `next lint` removed → `npm run lint` now calls `eslint src/`.
+  - `.eslintrc.json` → `eslint.config.mjs` flat config (v16 is flat-native).
+  - `images.domains` removed API → dropped (no `next/image` usage anywhere).
+  - `tsconfig.json` auto-migrated by Next (`jsx: react-jsx`, ES2017).
+- Security: `npm audit` now reports **0 vulnerabilities**. Next's internally
+  pinned `postcss` 8.4.31 was lifted via an npm `override` to ≥8.5.10 — note:
+  the override only resolved after a clean `node_modules` + lockfile rebuild.
+- Fixed the long-standing `no-page-custom-font` warning: Google Fonts `<link>`
+  → self-hosted `next/font/google` Inter. Lint gate now passes
+  `--max-warnings=0` for the first time.
+
+**Verification (beyond the static gates):** booted the production server and
+smoke-tested — `GET /` 200 with rendered title, `GET /api/ai` returns
+availability JSON, `POST /api/ai` → 401 without key / 400 on bad JSON.
+Turbopack build compiles in ~3s.
+
+**What I found:**
+- npm `overrides` for transitive deps may silently keep the stale nested copy;
+  a lockfile rebuild was required for the postcss override to take effect.
+- React 19 needed zero code changes in this codebase — all components were
+  already on supported patterns (no legacy refs, no defaultProps).
+
+**Quality gates:** `tsc --noEmit` clean · `eslint src/ --max-warnings=0` ✓ ·
+`next build` ✓ · `npm audit` 0 vulns · prod smoke test ✓.
+
+**What's next:** AgentScheduler auto-dispatch of queued AI tasks, then the
+Vitest harness.
+
+**Open questions:**
+- Turbopack is now the build default; if a future dependency misbehaves under
+  it, `next build --webpack` remains available as an escape hatch.
+
 ## Run #2 — 2026-06-07
 
 **Focus:** Security — AIBridge Phase 2 (server-side key) + dependency audit.
