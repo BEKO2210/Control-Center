@@ -13,16 +13,17 @@
 - [x] **AIBridge Phase 2** — Anthropic call moved behind `/api/ai`; server-only
   `ANTHROPIC_API_KEY` keeps the key out of the browser
 - [x] **npm audit** — cleared non-breaking transitive vulns (9 → 6)
+- [x] **Next 14 → 16 migration** — React 19, ESLint 9 flat config, Turbopack
+  builds, `next/font` Inter; **npm audit now 0 vulnerabilities**
 
 ## Next (prioritized)
 
-1. **Next 14 → 16 migration** — The remaining 6 audit vulns (all DoS/cache-
-   poisoning in `next` + its eslint glob chain) only fix via a major upgrade.
-   Needs a dedicated run with the breaking-changes guide and a full smoke test.
-2. **Auto-dispatch** — Have the `AgentScheduler` pull queued AI tasks
+1. **Auto-dispatch** — Have the `AgentScheduler` pull queued AI tasks
    automatically when AI is available, instead of a manual "Run with AI" click.
-3. **Test harness** — Add Vitest and cover: poll-failure counter, store
+2. **Test harness** — Add Vitest and cover: poll-failure counter, store
    migration, and the `RealtimeEngine` message router.
+3. **Export/Import** — JSON backup & restore with schema validation (protects
+   users now that localStorage holds real operational data).
 
 ## Backlog (idea pool)
 

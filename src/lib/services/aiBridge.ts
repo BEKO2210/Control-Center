@@ -41,7 +41,6 @@ export function setApiKey(key: string): void {
     }
   } catch (err) {
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
       console.error('[AIBridge] Failed to persist API key:', err);
     }
   }
@@ -169,7 +168,6 @@ class AIBridge {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown AI error';
       if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
         console.error('[AIBridge] processTask failed:', message);
       }
       store.updateTask(task.id, { status: 'queued' }); // park it back

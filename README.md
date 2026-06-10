@@ -22,7 +22,7 @@
 
 <p align="center">
   <a href="https://control-center-xi.vercel.app/"><img src="https://img.shields.io/badge/Live%20Demo-Vercel-black?logo=vercel" alt="Live Demo" /></a>
-  <img src="https://img.shields.io/badge/Next.js-14-black?logo=next.js" alt="Next.js 14" />
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
   <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss" alt="Tailwind" />
   <img src="https://img.shields.io/badge/Zustand-4.5-000?logo=react" alt="Zustand" />
@@ -187,7 +187,7 @@ All icons throughout the application use **Lucide React** -- a premium open-sour
 
 ### Prerequisites
 
-- **Node.js** >= 18.0.0
+- **Node.js** >= 20.9.0
 - **npm**, **yarn**, or **pnpm**
 
 ### Installation
@@ -225,7 +225,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. You will be
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Framework** | Next.js 14 (App Router) | Server-side rendering, routing |
+| **Framework** | Next.js 16 (App Router, Turbopack) | Server-side rendering, routing |
 | **Language** | TypeScript 5.5 | Type safety across the entire codebase |
 | **Styling** | Tailwind CSS 3.4 | Utility-first CSS with custom theme variables |
 | **State** | Zustand 4.5 | Lightweight, persistent global state |
@@ -617,6 +617,18 @@ Every screen handles the empty case gracefully, guiding users toward the right a
 ## Changelog
 
 All changes to Clawbot Mission Control, listed in reverse chronological order.
+
+### v2.0.0 -- 2026-06-10
+
+**Major: Next.js 14 → 16, React 19, zero npm vulnerabilities**
+
+| Area | Description |
+|------|-------------|
+| **feat!: Next.js 16 + React 19** | Upgraded `next` 14.2 → 16.2, `react`/`react-dom` 18.3 → 19.2. Builds now use Turbopack (compile time ~3s). Smoke-tested: production server boots, the page renders, and `/api/ai` honours its contract (401 without key, 400 on bad JSON). |
+| **security: 0 vulnerabilities** | The remaining 6 audit findings lived in `next` and its eslint `glob` chain and only resolved via this major upgrade. Next's internally pinned `postcss` was lifted to ≥8.5.10 via an npm `override`. `npm audit` is now fully clean. |
+| **feat: ESLint 9 flat config** | `next lint` was removed in Next 16. Migrated `.eslintrc.json` → `eslint.config.mjs` (eslint-config-next v16 is flat-config native); `npm run lint` now calls `eslint src/` directly. The lint gate passes with `--max-warnings=0` for the first time. |
+| **perf: self-hosted Inter via next/font** | Replaced the render-blocking Google Fonts `<link>` with `next/font/google` — fixes the long-standing `no-page-custom-font` warning and removes a third-party request. |
+| **chore: dependency hygiene** | Removed unused `framer-motion`; bumped `lucide-react` to v1 (React 19 peers), `@types/*` to match, engines to Node ≥20.9 (required by Next 16). Dropped the unused `images.domains` config (removed API in Next 16; `next/image` is not used). `tsconfig.json` auto-migrated by Next (`jsx: react-jsx`). |
 
 ### v1.6.0 -- 2026-06-07
 

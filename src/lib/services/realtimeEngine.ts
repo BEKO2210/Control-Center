@@ -85,7 +85,6 @@ class RealtimeEngine {
         this.handleEvent(event);
       } catch (err) {
         if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
           console.error('[RealtimeEngine] event handler error:', err);
         }
       }
