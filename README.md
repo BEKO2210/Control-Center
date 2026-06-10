@@ -624,6 +624,16 @@ Every screen handles the empty case gracefully, guiding users toward the right a
 
 All changes to Clawbot Mission Control, listed in reverse chronological order.
 
+### v2.1.0 -- 2026-06-10
+
+**Testing: first unit-test harness (Vitest), 38 tests**
+
+| Area | Description |
+|------|-------------|
+| **test: Vitest harness** | Added `vitest` with `npm test` / `npm run test:watch` and a node-environment config with `@/` alias resolution. First automated test coverage in the project's history. |
+| **refactor: extract pure logic for testability** | Pulled the inbound-message decoder out of `RealtimeEngine` into `src/lib/services/messageProtocol.ts` (`normalizeInboundMessage`, `coerceAgentArray`, `safeActivity/Status/Role`) and the persist migration out of the store into `src/lib/store/migrations.ts`. Both are now pure, side-effect-free, and independently testable; the engine and store import them. No behaviour change. |
+| **test: 38 tests across 3 suites** | `messageProtocol.test.ts` (22) covers wire-shape decoding, legacy/alias mapping, and rejection of unknown/malformed input; `migrations.test.ts` (7) covers the v1→v2 backfill, idempotency, and empty-blob tolerance; `utils.test.ts` (9) covers `truncate` edge cases (incl. the small-`maxLength` regression), `toLabel`, `capitalize`, and `generateId`. |
+
 ### v2.0.0 -- 2026-06-10
 
 **Major: Next.js 14 → 16, React 19, zero npm vulnerabilities**

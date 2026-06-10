@@ -2,6 +2,43 @@
 
 A running log of autonomous development cycles. Newest first.
 
+## Run #4 — 2026-06-10
+
+**Focus:** Code quality — first unit-test harness. Three runs of substantial
+logic had zero test coverage, the biggest standing risk; per the priority stack
+that outranks the next feature (auto-dispatch).
+
+**What I did:**
+- Added Vitest (`npm test`, `npm run test:watch`) with a node-env config and
+  `@/` alias resolution.
+- Refactored for testability (no behaviour change):
+  - Extracted the inbound-message decoder from `RealtimeEngine` →
+    `src/lib/services/messageProtocol.ts` (pure functions); the engine now
+    imports them and lost ~70 lines of private methods.
+  - Extracted the persist migration from the store →
+    `src/lib/store/migrations.ts` (pure `migrate`).
+- Wrote 38 tests across 3 suites: protocol decoding (22), store migration (7),
+  utils edge cases (9).
+
+**What I found:**
+- The extraction was clean because both pieces were already side-effect-free —
+  they just lived as private methods on stateful singletons, which is why they
+  were untestable. Worth watching for the same pattern elsewhere
+  (`connectionService` URL building is a candidate next).
+- Test files sit under `src/` so they're covered by `tsc` and `eslint` too; all
+  three gates stay green and the build excludes them (not imported by app code).
+
+**Quality gates:** `vitest run` 38/38 ✓ · `tsc --noEmit` clean ·
+`eslint src/ --max-warnings=0` ✓ · `next build` ✓ (bundle unchanged) ·
+`npm audit` 0 vulns.
+
+**What's next:** AgentScheduler auto-dispatch of queued AI tasks (now safer to
+build on a tested protocol layer), then Export/Import with schema validation.
+
+**Open questions:**
+- Should CI run `npm test`? There's no GitHub Actions workflow yet; a tiny
+  `test + build` workflow would make the green bar enforceable on PRs.
+
 ## Run #3 — 2026-06-10
 
 **Focus:** Next.js 14 → 16 major migration (top ROADMAP item; closes the

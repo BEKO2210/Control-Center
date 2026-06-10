@@ -15,13 +15,15 @@
 - [x] **npm audit** — cleared non-breaking transitive vulns (9 → 6)
 - [x] **Next 14 → 16 migration** — React 19, ESLint 9 flat config, Turbopack
   builds, `next/font` Inter; **npm audit now 0 vulnerabilities**
+- [x] **Test harness** — Vitest + 38 tests (message protocol, store migration,
+  utils); extracted pure modules for testability
 
 ## Next (prioritized)
 
-1. **Auto-dispatch** — Have the `AgentScheduler` pull queued AI tasks
+1. **CI workflow** — A GitHub Actions job running `test + lint + build` so the
+   green bar is enforced on every PR (no CI exists yet).
+2. **Auto-dispatch** — Have the `AgentScheduler` pull queued AI tasks
    automatically when AI is available, instead of a manual "Run with AI" click.
-2. **Test harness** — Add Vitest and cover: poll-failure counter, store
-   migration, and the `RealtimeEngine` message router.
 3. **Export/Import** — JSON backup & restore with schema validation (protects
    users now that localStorage holds real operational data).
 

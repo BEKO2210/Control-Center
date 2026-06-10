@@ -26,41 +26,20 @@ import {
   AGENT_POLL_INTERVAL_MS,
   CLAW_STALE_TIMEOUT_MS,
 } from '@/lib/constants';
+import {
+  coerceAgentArray,
+  normalizeInboundMessage,
+  safeActivity,
+  safeRole,
+  safeStatus,
+} from '@/lib/services/messageProtocol';
 import type {
-  AgentActivity,
-  AgentRole,
   InboundMessage,
   RemoteAgentPayload,
   RemoteMemoryPayload,
   RemoteStatusPayload,
   RemoteTaskPayload,
-  TaskStatus,
 } from '@/lib/types';
-
-const VALID_ACTIVITIES: AgentActivity[] = [
-  'idle',
-  'thinking',
-  'building',
-  'reviewing',
-  'blocked',
-];
-
-const VALID_TASK_STATUS: TaskStatus[] = [
-  'idea',
-  'queued',
-  'in_progress',
-  'review',
-  'done',
-];
-
-const VALID_ROLES: AgentRole[] = [
-  'developer',
-  'writer',
-  'designer',
-  'researcher',
-  'operator',
-  'growth',
-];
 
 type StoreApi = ReturnType<typeof useMissionControl.getState>;
 
@@ -137,60 +116,17 @@ class RealtimeEngine {
         break;
       }
       case 'agents_discovered': {
-        const agents = this.coerceAgentArray(event.data);
+        const agents = coerceAgentArray(event.data);
         agents.forEach((a) => this.reconcileAgent(store, clawId, a));
         break;
       }
       case 'message': {
-        const msg = this.normalize(event.data);
+        const msg = normalizeInboundMessage(event.data);
         if (msg) this.route(store, clawId, msg);
         break;
       }
       default:
         break;
-    }
-  }
-
-  /**
-   * Normalize the many shapes ConnectionManager emits into a typed
-   * {@link InboundMessage}. Handles both the documented protocol
-   * (`{ type, payload }`) and legacy wrappers (`{ type, data }`).
-   */
-  private normalize(raw: unknown): InboundMessage | null {
-    if (!raw || typeof raw !== 'object') return null;
-    const obj = raw as Record<string, unknown>;
-    const type = typeof obj.type === 'string' ? obj.type : null;
-    if (!type) return null;
-
-    // payload may live under `payload` (new protocol) or `data` (legacy).
-    const payload = (obj.payload ?? obj.data) as unknown;
-
-    switch (type) {
-      case 'task_update':
-        return { type: 'task_update', payload: payload as RemoteTaskPayload };
-      case 'agent_status':
-      case 'agent_update':
-        return { type: 'agent_status', payload: payload as RemoteAgentPayload };
-      case 'agents':
-      case 'agents_list':
-        return {
-          type: 'agents_list',
-          payload: this.coerceAgentArray(payload),
-        };
-      case 'memory_write':
-        return {
-          type: 'memory_write',
-          payload: payload as RemoteMemoryPayload,
-        };
-      case 'status':
-      case 'health':
-        return { type: 'status', payload: (payload ?? {}) as RemoteStatusPayload };
-      case 'heartbeat':
-      case 'pong':
-      case 'ping':
-        return { type: 'heartbeat', payload };
-      default:
-        return null;
     }
   }
 
@@ -244,7 +180,7 @@ class RealtimeEngine {
           (!!remote.name && a.name === remote.name)),
     );
 
-    const activity = this.safeActivity(remote.activity);
+    const activity = safeActivity(remote.activity);
     const now = new Date().toISOString();
 
     if (existing) {
@@ -258,7 +194,7 @@ class RealtimeEngine {
       store.addAgent({
         name: remote.name,
         avatar: 'bot',
-        role: this.safeRole(remote.role),
+        role: safeRole(remote.role),
         responsibilities: [],
         currentTasks: remote.currentTasks ?? [],
         activity: activity ?? 'idle',
@@ -283,7 +219,7 @@ class RealtimeEngine {
         (t.clawId === clawId || t.clawId == null),
     );
 
-    const status = this.safeStatus(remote.status);
+    const status = safeStatus(remote.status);
 
     if (existing) {
       store.updateTask(existing.id, {
@@ -372,7 +308,7 @@ class RealtimeEngine {
         connectionManager
           .sendRestCommand(conn.id, 'GET', '/agents')
           .then((data) => {
-            const agents = this.coerceAgentArray(data);
+            const agents = coerceAgentArray(data);
             const s = useMissionControl.getState();
             agents.forEach((a) => this.reconcileAgent(s, conn.clawId, a));
           })
@@ -387,37 +323,6 @@ class RealtimeEngine {
         });
       }
     }
-  }
-
-  // --- Coercion helpers -----------------------------------------------------
-
-  /** Pull an agent array out of the many shapes a claw might send. */
-  private coerceAgentArray(data: unknown): RemoteAgentPayload[] {
-    if (Array.isArray(data)) return data as RemoteAgentPayload[];
-    if (data && typeof data === 'object') {
-      const obj = data as Record<string, unknown>;
-      if (Array.isArray(obj.agents)) return obj.agents as RemoteAgentPayload[];
-      if (Array.isArray(obj.data)) return obj.data as RemoteAgentPayload[];
-    }
-    return [];
-  }
-
-  private safeActivity(value: unknown): AgentActivity | null {
-    return VALID_ACTIVITIES.includes(value as AgentActivity)
-      ? (value as AgentActivity)
-      : null;
-  }
-
-  private safeStatus(value: unknown): TaskStatus | null {
-    return VALID_TASK_STATUS.includes(value as TaskStatus)
-      ? (value as TaskStatus)
-      : null;
-  }
-
-  private safeRole(value: unknown): AgentRole {
-    return VALID_ROLES.includes(value as AgentRole)
-      ? (value as AgentRole)
-      : 'operator';
   }
 }
 
