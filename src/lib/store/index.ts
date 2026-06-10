@@ -24,6 +24,7 @@ import { defaultShellId } from '@/shells/registry';
 import { generateId } from '@/lib/utils';
 import { defaultAgents } from '@/agents/defaults';
 import { STORE_SCHEMA_VERSION } from '@/lib/constants';
+import { migrate } from '@/lib/store/migrations';
 
 // --- Mission Control Store ---
 
@@ -425,42 +426,10 @@ export const useMissionControl = create<MissionControlState>()(
     {
       name: 'clawbot-mission-control',
       version: STORE_SCHEMA_VERSION,
-      /**
-       * Schema migration runner (DEFEKT-8). Runs whenever the persisted
-       * `version` is older than {@link STORE_SCHEMA_VERSION}, transforming the
-       * stored blob step-by-step so a breaking schema change never wipes a
-       * user's data.
-       *
-       * @param persistedState - The raw object loaded from localStorage.
-       * @param version - The schema version the blob was written with.
-       * @returns A state object matching the current schema.
-       * @example
-       *   // v1 (no clawId on tasks) → v2 (clawId backfilled to null)
-       *   migrate({ tasks: [{ id: 't1' }] }, 1)
-       */
-      migrate: (persistedState: unknown, version: number) => {
-        const state = (persistedState ?? {}) as Record<string, unknown>;
-
-        // v1 → v2: introduce multi-claw isolation. Backfill `clawId: null`
-        // on every task and memory so existing items render as "global".
-        if (version < 2) {
-          if (Array.isArray(state.tasks)) {
-            state.tasks = (state.tasks as Task[]).map((t) => ({
-              clawId: null,
-              ...t,
-            }));
-          }
-          if (Array.isArray(state.memories)) {
-            state.memories = (state.memories as Memory[]).map((m) => ({
-              clawId: null,
-              ...m,
-            }));
-          }
-          state.selectedClawId = null;
-        }
-
-        return state as unknown as MissionControlState;
-      },
+      // Schema migration runner (DEFEKT-8). The transform itself lives in
+      // ./migrations so it can be unit tested in isolation.
+      migrate: (persistedState, version) =>
+        migrate(persistedState, version) as unknown as MissionControlState,
       partialize: (state) => ({
         activeShellId: state.activeShellId,
         tasks: state.tasks,
